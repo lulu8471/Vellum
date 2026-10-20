@@ -4,15 +4,15 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {appendInvoiceEvidence} from '../assets/invoice-inline-v7.js';
+import {appendInvoiceEvidence,withoutDescriptionNotices,applySourceDescriptionPolicy} from '../assets/invoice-inline-v8.js';
 import {mergeShipmentModel,appendMergeSources} from '../assets/shipment-merge-v4.js';
 function bundle() {
- let code=fs.readFileSync(new URL('../assets/index-VELLUM-PDF7-20261020.js',import.meta.url),'utf8');
+ let code=fs.readFileSync(new URL('../assets/index-VELLUM-PDF8-20261020.js',import.meta.url),'utf8');
  code=code.replace(/^(?:import[^\n]+\n)+/,'').replace(/^document.documentElement.dataset.vellumBuild=[^;]+;/,'');
  code=code.replace(/\(function\(\)\{let e=document\.createElement\(`link`\)[\s\S]*?\}\)\(\);var p=/,'var p=');
  const mount=code.lastIndexOf('(0,T.createRoot)');assert.ok(mount>0,'Bundle bootstrap seam changed; review test adapter');
  code=code.slice(0,mount)+';globalThis.api={parse:xe,write:Ee,xlsx:E.default};';
- const context={appendInvoiceEvidence,mergeShipmentModel,appendMergeSources,console,Uint8Array,ArrayBuffer,TextEncoder,TextDecoder,File,Blob,URL,setTimeout,clearTimeout,fetch:async()=>new Response(fs.readFileSync(new URL('../templates/invoice-standard.xlsx',import.meta.url)))};
+ const context={applySourceDescriptionPolicy,withoutDescriptionNotices,appendInvoiceEvidence,mergeShipmentModel,appendMergeSources,console,Uint8Array,ArrayBuffer,TextEncoder,TextDecoder,File,Blob,URL,setTimeout,clearTimeout,fetch:async()=>new Response(fs.readFileSync(new URL('../templates/invoice-standard.xlsx',import.meta.url)))};
  vm.createContext(context);vm.runInContext(code,context);return context.api;
 }
 const api=bundle();
@@ -52,3 +52,17 @@ test('ZIP without PDF or invalid archive is explicitly rejected',async()=>{await
 test('verified invoice can download while an unrelated invoice is blocked inline',async()=>{const m=await api.parse(input([row(),row({'Commercial Invoice':'654321','Item Name':'87654321'})]));m.issues.push({severity:'error',field:'Product Description',sourceRow:m.rows[1].sourceRow,message:'Unknown'});const books=[];const urls=await buildInvoiceDownloads(m,async group=>{assert.equal(group.rows.length,1);assert.equal(group.rows[0].commercialInvoice,'123456');assert.equal(group.issues.filter(x=>x.severity==='error').length,0);books.push(group);return api.write(group)});try{assert.equal(urls.length,1);assert.equal(books.length,1)}finally{urls.forEach(x=>URL.revokeObjectURL(x.href))}});
 test('global error blocks every invoice download and direct writer rejects any unresolved field',async()=>{const m=await api.parse(input([row(),row({'Commercial Invoice':'654321'})]));m.issues.push({severity:'error',field:'Item Description',sourceRow:1,message:'Global source error'});const urls=await buildInvoiceDownloads(m,async()=>{throw Error('Must not build')});assert.equal(urls.length,0);await assert.rejects(api.write(m),/flagged|review|resolve/i)});
 test('numeric extraction before-after audit excludes unrelated invoices',()=>{const w=api.xlsx.utils.book_new();const model={rows:[{commercialInvoice:'123456',shipto:'99',itemName:'12345678',sourceRow:2}],pdfSource:{lines:[{invoiceNumber:'123456',shipto:'99',sku:'12345678',lineNumber:1,description:'TEST RING'}],originalExtractionPages:['Commercial Invoice: 123456\nTotal Weight 250 gm','Commercial Invoice: 654321\nPRIVATE OTHER'],editedExtraction:['Commercial Invoice: 123456\nTotal Weight 2.50 gm','Commercial Invoice: 654321\nEDITED OTHER']}};appendInvoiceEvidence(w,model,api.xlsx);const rows=api.xlsx.utils.sheet_to_json(w.Sheets['Extraction changes'],{header:1});assert.equal(rows.length,2);assert.match(rows[1][2],/250 gm/);assert.match(rows[1][3],/2.50 gm/);assert.ok(!JSON.stringify(w).includes('PRIVATE OTHER'));assert.ok(!JSON.stringify(w).includes('EDITED OTHER'))});
+test('CSV, XLS and XLSX do not solicit name/category review; missing category remains explicit',async()=>{
+ const csv=input([row({'Item Description':'','Product Description':''})]);
+ const wb=api.xlsx.read(await csv.arrayBuffer(),{type:'array'});
+ const xlsx=new File([api.xlsx.write(wb,{type:'array',bookType:'xlsx'})],'synthetic.xlsx');
+ const xls=new File([api.xlsx.write(wb,{type:'array',bookType:'biff8'})],'synthetic.xls');
+ for(const file of [csv,xlsx,xls]){
+  const m=await api.parse(file);
+  assert.ok(!m.issues.some(i=>['Item Description','Product Description','Classification'].includes(i.field)));
+  assert.equal(m.rows[0].itemDescription,'');assert.equal(m.rows[0].productDescription,'Unknown (unverified)');
+  assert.equal(m.rows[0].unit,'');assert.equal(m.rows[0].code,'');
+  assert.equal(m.issues.filter(i=>i.severity==='error').length,0);
+  await api.write(m);
+ }
+});

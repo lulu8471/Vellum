@@ -78,9 +78,39 @@ app=app.replace('e.issues?.some(issue=>issue.severity===`error`&&issue.field===`
 app=app.replace('Resolve the shipment merge conflicts before creating a workbook.','Resolve the flagged fields or shipment merge conflicts before creating this workbook.');
 // Version helper imports too: cached first-release modules must not mix with this build.
 app = app.replace('"./invoice-pdf.js"', '"./invoice-pdf-v7.js"').replace('"./invoice-classification.js"', '"./invoice-classification-v7.js"');
-write('assets/index-VELLUM-PDF7-20261020.js', app);
-for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF7-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF7-20261020.js']]) {
-  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF7-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF7-20261020.js'));
+// R8: automatic descriptions/categories, one combined workbook, same layout.
+app = app.replaceAll('./src-DGBeAv_F.js','./ocr-PDF8-20261020.js');
+app = app.replaceAll('"./invoice-classification-v7.js"','"./invoice-classification-v8.js"')
+  .replaceAll('"./invoice-downloads-v7.js"','"./invoice-downloads-v8.js"')
+  .replaceAll('"./invoice-inline-v7.js"','"./invoice-inline-v8.js"')
+  .replaceAll('"./invoice-pdf-v7.js"','"./invoice-pdf-v8.js"');
+app = app.replace('if(e.descriptionUnresolved)r.push({id:`pdf-${e.lineNumber}-description`,severity:`error`',
+  'if(e.descriptionUnresolved)r.push({id:`pdf-${e.lineNumber}-description`,severity:`warning`');
+app = app.replace('Description for SKU ${e.sku} is not yet reliable.', 'Original source description used directly for SKU ${e.sku}; OCR wording is unverified.');
+app = app.replace('if(t.product===`Jewelry`)r.push({id:`pdf-${e.lineNumber}-unknown-product`,severity:`error`',
+  'if(t.classificationUnresolved)r.push({id:`pdf-${e.lineNumber}-unknown-product`,severity:`warning`');
+app = app.replace('No unambiguous product marker or verified SKU category was found. Use the inline fields below; no category was guessed.',
+  'Retained as Unknown (unverified). No category was guessed and no confirmation is required.');
+app = app.replace('outputName:n.invoices?.length>1?`${n.invoices.length} invoice workbooks`:`${n.invoiceNumber} INV.xlsx`',
+  'outputName:n.invoices?.length>1?`${e.name.replace(/\\.(pdf|zip)$/i,``)} INV.xlsx`:`${n.invoiceNumber} INV.xlsx`');
+app = app.replace('if(n===0||(e.sourceKind===`pdf`&&new Set(e.rows.map(row=>row.commercialInvoice+`|`+row.shipto)).size>1))', 'if(n===0)');
+app = app.replaceAll('if(!model.issues.some(issue=>issue.severity===`error`)||new Set(model.rows.map(row=>row.commercialInvoice+`|`+row.shipto)).size>1)', 'if(!model.issues.some(issue=>issue.severity===`error`))');
+// Missing descriptive wording is advisory too; identifiers and numeric errors stay strict.
+app = app.replace('let l=[...s.issues,...r];return', 'let l=[...s.issues,...r].map(issue=>issue.field===`Item Description`||issue.field===`Product Description`?{...issue,severity:issue.severity===`error`?`warning`:issue.severity}:issue);return');
+// Unknown product does not justify assigning a declaration unit or commodity code.
+app = app.replace('let l=[...s.issues,...r].map', 'for(const row of s.rows){if(row.productDescription===`Unknown (unverified)`){row.unit=``;row.code=``;}}let l=[...s.issues,...r].map');
+app = app.replace('e.platterRuleApplied?d[`T${n}`]', 'e.productDescription===`Unknown (unverified)`?d[`T${n}`]={t:`s`,v:``}:e.platterRuleApplied?d[`T${n}`]');
+// No descriptive confidence/reliability notices in the UI, for any input format.
+// PDF extraction evidence stays on pdfSource and in the audit worksheet.
+app = app.replace('import { createInlineReviewElement,', 'import { applySourceDescriptionPolicy, withoutDescriptionNotices, createInlineReviewElement,');
+app = app.replace('const model=mergeShipmentModel(await _eRaw(e));model.checks=', 'const model=applySourceDescriptionPolicy(mergeShipmentModel(await _eRaw(e)));model.checks=');
+app = app.replace('let l=[...s.issues,...r].map(issue=>issue.field===`Item Description`||issue.field===`Product Description`?{...issue,severity:issue.severity===`error`?`warning`:issue.severity}:issue);return', 'let l=withoutDescriptionNotices([...s.issues,...r]);return');
+app = app.replaceAll('All descriptions present','Source descriptions retained');
+app = app.replace('Review details (${a.issues.length})','Processing details (${a.issues.length})');
+write('assets/index-VELLUM-PDF8-20261020.js', app);
+write('assets/invoice-pdf-v8.js',read('assets/invoice-pdf-v7.js').replaceAll('PDF7-20261020','PDF8-20261020').replace("    if (result.data.confidence < 70) throw new Error('This scan is too unclear for reliable local OCR. Please use a sharper scan.');", "    // Page-wide OCR confidence is not a description gate; strict row/totals validation follows."));
+for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF8-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF8-20261020.js']]) {
+  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF8-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF8-20261020.js'));
 }
-write('index.html', read('index.html').replace('index-VELLUM-PDF6-20261020.js','index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r6','pdf-repair-20261020-r7').replace('index-VELLUM-PDF5-20261020.js','index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r5','pdf-repair-20261020-r6').replace('index-VELLUM-PDF4-20261020.js','index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r4','pdf-repair-20261020-r5').replace('index-VELLUM-PDF3-20261020.js','index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r3','pdf-repair-20261020-r4').replace('index-VELLUM-PDF2-20261020.js', 'index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r2', 'pdf-repair-20261020-r4').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF7-20261020.js').replace('index-VELLUM-PDF-20261020.js', 'index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020\"', 'pdf-repair-20261020-r4\"'));
-console.log('Built PDF-repair app from preserved SAFE3 baseline.');
+write('index.html', read('index.html').replace(/index-VELLUM-PDF\d*-20261020\.js/g,'index-VELLUM-PDF8-20261020.js').replace(/pdf-repair-20261020-r\d+/g,'pdf-repair-20261020-r8'));
+console.log('Built automatic combined PDF workbook app from preserved SAFE3 baseline.');

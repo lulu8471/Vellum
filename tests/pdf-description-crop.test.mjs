@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {refineDescriptions} from '../assets/invoice-pdf-v7.js';
+import {refineDescriptions} from '../assets/invoice-pdf-v8.js';
 const input='Commercial Invoice: 123456\n1 7113.19.0000 12345678 TEST RG 5 US 2.50 gm 1 $10.00 $10.00';
 const tsv='header\n'+['12345678','TEST','RG','5','US','2.50','gm'].map((word,i)=>['5','1','1','1','1',i+1,20+i*40,20,30,15,95,word].join('\t')).join('\n');
 async function run(readings){let crops=[],calls=0;const previous=globalThis.document;globalThis.document={createElement:()=>{let c={width:0,height:0,getContext:()=>({drawImage(){}})};crops.push(c);return c}};try{const result=await refineDescriptions({width:1000,height:1000},{setParameters:async()=>{},recognize:async()=>({data:readings[calls++]})},input,tsv);return {result,crops,calls}}finally{globalThis.document=previous}}

@@ -2,6 +2,18 @@
 
 Browser-local preparation of shipment Excel files from spreadsheets and COMPASS PDF invoices. The existing English UI, workbook template, spreadsheet formulas, grouping and sorting are retained.
 
+## Current behavior: automatic combined export (R8)
+
+- One source PDF produces **one workbook**, with all invoice rows together in the existing Vellum main worksheet. Existing formatting, sorting, formulas, invoice identifiers and totals are preserved. Different invoices are never merged by SKU.
+- Names are used directly from extracted source text. Known bounded abbreviations (RG, ER, etc.) and verified SKU categories classify automatically. No name/category confirmation, popup or inline required field is presented.
+- Unverified wording is retained in the extraction audit only, without visible reliability notices, confidence notices, or name/category review requests for any input format. An unknown or conflicting category is explicitly `Unknown (unverified)`, with no invented commodity code or declaration unit. This does not block download or display a category confirmation. It is not a claim that OCR wording is perfect.
+- Numeric inconsistencies, missing required invoice identity, and genuine merge conflicts remain blocking. A combined source is never partially exported by silently dropping a failing invoice.
+- The `PDF extraction` audit worksheet retains original extracted descriptions, output descriptions, verification basis and classification status. Private source-reviewed delivery corrections are separate from automatic application behavior.
+- `assets/invoice-classification-v8.js`, `assets/invoice-inline-v8.js`, and `assets/invoice-downloads-v8.js` implement the new behavior. R8 PDF/OCR helpers reference the isolated R8 app. Prior versioned dependency graphs are unchanged for already-open tabs.
+- Build: `node scripts/build-app.mjs`. Test: `node --test tests/*.test.mjs`. R8-specific integration tests invoke the actual converter and workbook writer for warning-only export, strict numeric blocking, repeated SKU across invoices, combined formulas/audit, and dependency isolation. Historical tests also preserve prior behavior contracts where explicitly imported.
+
+The sections below document earlier releases; their required review and split-download behavior is superseded by R8 above.
+
 ## PDF repair (2026-10-20)
 
 - `assets/invoice-pdf-v7.js` is the maintained PDF parser and local OCR pipeline.
