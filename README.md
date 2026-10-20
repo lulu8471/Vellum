@@ -4,10 +4,10 @@ Browser-local preparation of shipment Excel files from spreadsheets and COMPASS 
 
 ## PDF repair (2026-10-20)
 
-- `assets/invoice-pdf.js` is the maintained PDF parser and local OCR pipeline.
-- `assets/invoice-classification.js` handles conservative category inference and explicit OCR-description review.
+- `assets/invoice-pdf-v2.js` is the maintained PDF parser and local OCR pipeline.
+- `assets/invoice-classification-v2.js` handles conservative category inference and explicit OCR-description review.
 - `scripts/build-app.mjs` deterministically integrates these modules into the existing deployed application. Run `node scripts/build-app.mjs` after changing integration hooks. The repository contains deployed assets, not the original React source project; the verified `index-VELLUM-SAFE3-20260826.js` is preserved as the integration baseline.
-- `index.html` loads `index-VELLUM-PDF-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. The old global `String.prototype.match` patch is no longer loaded.
+- `index.html` loads `index-VELLUM-PDF2-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
 
 ### Reliability and privacy
 
@@ -15,7 +15,7 @@ Native-text pages are parsed first. Large raster images trigger fresh local OCR 
 
 OCR uses the bundled Tesseract worker, WASM core and English data on the device. No documents or extracted rows are sent to OCR services. Canvas dimensions are bounded; PDF and OCR resources are released on completion and errors.
 
-Document totals cannot verify gemstone details or product names. For scans, whitespace-only differences may use the existing reference spacing with a visible check entry. Other differences, and descriptions without a reference, require editable per-row confirmation against the original PDF. Cancelling stops the import. Original OCR and reviewed descriptions are shown in the checks. Source country of origin is retained instead of silently replaced by the catalog. Category conflicts require explicit confirmation; an unknown generic `Jewelry` category blocks download.
+Document totals cannot verify gemstone details or product names. For scans, whitespace-only differences may use the existing reference spacing with a visible check entry. Other differences, and descriptions without a reference, require editable per-row confirmation against the original PDF. Cancelling stops the import. Original OCR and reviewed descriptions are shown in the checks. Source country of origin is retained instead of silently replaced by the catalog. Category conflicts require explicit confirmation; unknown products require an explicit selection in a category dropdown.
 
 ### Tests
 
@@ -26,3 +26,9 @@ Validation includes actual bundled PDF.js rendering and local Tesseract OCR on p
 ### Deployment and rollback
 
 Publish only reviewed application assets, scripts and synthetic tests. Do not commit private fixtures or test outputs. After publishing, verify the deployed `index.html` points to the intended bundle and that dynamic PDF/OCR chunks reference the same app. To roll back, restore the prior commit as a normal commit (no force push); baseline artifacts have not been removed.
+
+### Second repair: invoice bundles and compressed scans
+
+The matching official PDF.js 6.2.108 image decoders and licenses live in `pdfjs/wasm/`. Supplying `wasmUrl` fixes JBIG2 images that previously rendered blank and were misleadingly reported as blurry. Decoder assets come from the official `pdfjs-dist` npm package. Numeric cell crops are locally re-read when unit weights do not reconcile; decimal points are recognized from image pixels, never inferred by dividing values.
+
+Each invoice/destination in a PDF is validated independently and gets its own named Excel download. Same invoice + destination + SKU rows merge only when unit values and descriptions agree. Zero-price invoice lines are accepted when all quantities, weights and totals reconcile. Decimal-format whole quantities, explicit line freight/insurance and subtotal checks are supported. Actual Carton and AWB fields are preserved when present. Unknown product categories have an explicit dropdown; cancellation creates no output.

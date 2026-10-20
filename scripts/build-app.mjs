@@ -16,16 +16,31 @@ replaceOnce("function ge(e,t){let n=e=>t.some(t=>t.severity===`error`&&e.include
 // Owner confirmed SKU 73210496 is Earrings on 2026-10-20; preserve other catalog fields.
 replaceOnce('73210496:{description:`PT RDDI .95 I VS1 SLST ER`,family:`ENGAGEMENT`,product:`Ring`,coo:`US`}', '73210496:{description:`PT RDDI .95 I VS1 SLST ER`,family:`ENGAGEMENT`,product:`Earrings`,coo:`US`}');
 // Retain raw OCR descriptions and require review where a reference cannot verify them.
-app = app.replace('let n=await oe(e,t);t?.', 'let n=await oe(e,t);n.lines=reviewInvoiceDescriptions(n.lines,n.extractionMode,D);t?.');
+app = app.replace('let n=await oe(e,t);t?.', 'let n=await oe(e,t);n.lines=reviewInvoiceDescriptions(n.lines,n.extractionMode,D);n.lines=await reviewInvoiceProducts(n.lines,D);t?.');
 app = app.replace('if(t.product===`Jewelry`)', 'if(e.descriptionReviewed)r.push({id:`pdf-${e.lineNumber}-description-review`,severity:`fixed`,sourceRow:n,field:`Item Description`,message:e.descriptionReviewed===`spacing`?`Description spacing matched the saved reference for SKU ${e.sku}.`:`You reviewed the scanned description for SKU ${e.sku}.`,resolution:`Original OCR: ${e.rawDescription} · Output: ${e.description}`});if(t.product===`Jewelry`)');
 // Expose actionable check details, including original OCR and reviewed output.
 app = app.replace('v>0||!s?(0,V.jsxs)(`button`', 'a.issues.length>0&&(0,V.jsxs)(`details`,{open:v>0,style:{textAlign:`left`,maxHeight:`22rem`,overflow:`auto`,margin:`1rem 0`,fontSize:`0.85rem`},children:[(0,V.jsx)(`summary`,{children:`Review details (${a.issues.length})`}),(0,V.jsx)(`ul`,{children:a.issues.map(e=>(0,V.jsxs)(`li`,{style:{margin:`0.75rem 0`,overflowWrap:`anywhere`},children:[(0,V.jsx)(`strong`,{children:`${e.severity.toUpperCase()} · ${e.field}: `}),e.message,e.resolution&&(0,V.jsx)(`p`,{children:e.resolution})]},e.id))})]}),v>0||!s?(0,V.jsxs)(`button`');
 // Prevent switching/resetting a source while its asynchronous import is running.
 app = app.replace('let h=e=>{if(e){', 'let h=e=>{if(e&&!d){').replace('g=async()=>{if(t){', 'g=async()=>{if(t&&!d){').replace('tabIndex:-1,type:`file`', 'tabIndex:-1,disabled:d,type:`file`').replace('_=()=>{n(null),o(null)', '_=()=>{if(d)return;n(null),o(null)');
-app = 'import { classifyInvoiceItem, reviewInvoiceDescriptions } from "./invoice-classification.js";\n' + app;
-write('assets/index-VELLUM-PDF-20261020.js', app);
-for (const file of ['assets/pdf-AOUXcwrk.js', 'assets/pdf.worker.min-x6qBjBdQ.js', 'assets/src-DGBeAv_F.js']) {
-  write(file, read(file).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF-20261020.js'));
+// Preserve invoice identity on every row when one PDF contains several invoices.
+app = app.replace('[n.shipmentNumber,n.invoiceNumber,n.shipto,e.sku,', '[e.shipmentNumber||n.shipmentNumber,e.invoiceNumber||n.invoiceNumber,e.shipto||n.shipto,e.sku,');
+app = app.replace('e.hts,n.invoiceNumber])]', 'e.hts,e.invoiceNumber||n.invoiceNumber])]');
+app = app.replace('outputName:`${n.invoiceNumber} INV.xlsx`', 'outputName:n.invoices?.length>1?`${n.invoices.length} invoice workbooks`:`${n.invoiceNumber} INV.xlsx`');
+app = app.replace('if(e.descriptionReviewed)', 'if(e.confirmedProduct){t.product=e.confirmedProduct;r.push({id:`pdf-${e.lineNumber}-chosen-product`,severity:`fixed`,sourceRow:n,field:`Product Description`,message:`You selected ${t.product} for SKU ${e.sku}.`});}if(e.descriptionReviewed)');
+// Multi-invoice PDFs download one independent workbook per invoice/destination.
+app = app.replace('let t=await Ee(e);r=URL.createObjectURL(t)', 'if(e.sourceKind===`pdf`&&new Set(e.rows.map(row=>row.commercialInvoice+`|`+row.shipto)).size>1){e.downloads=await buildInvoiceDownloads(e,Ee);r=e.downloads[0].href;}else{let t=await Ee(e);r=URL.createObjectURL(t)}');
+app = app.replace('v>0||!s?(0,V.jsxs)(`button`', 'a.downloads?.length>1&&s&&!d&&v===0?(0,V.jsx)(`div`,{children:a.downloads.map(item=>(0,V.jsx)(`a`,{className:`download-button`,download:item.name,href:item.href,style:{marginTop:`.6rem`},children:`Download ${item.name}`},item.name))}):v>0||!s?(0,V.jsxs)(`button`');
+app = app.replace('(0,w.useEffect)(()=>()=>{s&&URL.revokeObjectURL(s)},[s]);', '(0,w.useEffect)(()=>()=>{s&&URL.revokeObjectURL(s);a?.downloads?.forEach(item=>URL.revokeObjectURL(item.href))},[s]);');
+app = app.replace('[e.shipmentNumber||n.shipmentNumber,', '[e.cartonNumber||e.shipmentNumber||n.shipmentNumber,');
+app = app.replace('e.extendedCost,0,0,e.extendedCost,e.unitWeightGrams', 'e.extendedCost,e.unitFreight||0,e.extendedFreight||0,e.extendedCost+(e.extendedFreight||0),e.unitWeightGrams');
+app = app.replace('e.hts,e.invoiceNumber||n.invoiceNumber])]', 'e.hts,e.hawb||e.invoiceNumber||n.invoiceNumber])]');
+app = 'import { buildInvoiceDownloads } from "./invoice-downloads.js";\n' + app;
+app = 'import { classifyInvoiceItem, reviewInvoiceDescriptions, reviewInvoiceProducts } from "./invoice-classification.js";\n' + app;
+// Version helper imports too: cached first-release modules must not mix with this build.
+app = app.replace('"./invoice-pdf.js"', '"./invoice-pdf-v2.js"').replace('"./invoice-classification.js"', '"./invoice-classification-v2.js"');
+write('assets/index-VELLUM-PDF2-20261020.js', app);
+for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF2-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF2-20261020.js']]) {
+  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF2-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF2-20261020.js'));
 }
-write('index.html', read('index.html').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF-20261020.js'));
+write('index.html', read('index.html').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF2-20261020.js').replace('index-VELLUM-PDF-20261020.js', 'index-VELLUM-PDF2-20261020.js').replace('pdf-repair-20261020\"', 'pdf-repair-20261020-r2\"'));
 console.log('Built PDF-repair app from preserved SAFE3 baseline.');
