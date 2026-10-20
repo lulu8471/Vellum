@@ -43,18 +43,44 @@ replaceOnce('let b=le(e[`Item Name`]);return{', 'le(e[`Carton ID`])||u.push({id:
 // Include the unassigned group in mixed-document filenames instead of implying one HAWB.
 replaceOnce('h=m.length?m.join(`_`):', 'h=f.includes(`Unassigned`)&&m.length?`Multiple shipments`:m.length?m.join(`_`):');
 // Make automatic category evidence visible without implying the user selected it.
-app = app.replace('if(t.classificationConfirmed)', 'if(t.classificationEvidence)r.push({id:`pdf-${e.lineNumber}-verified-category`,severity:`fixed`,sourceRow:n,field:`Product Description`,message:`Category ${t.product} automatically filled from verified SKU evidence.`,resolution:t.classificationEvidence});if(t.classificationConfirmed)');
+app = app.replace('if(t.classificationConfirmed)', 'if(t.classificationEvidence&&!t.classificationUnresolved)r.push({id:`pdf-${e.lineNumber}-verified-category`,severity:`fixed`,sourceRow:n,field:`Product Description`,message:`Category ${t.product} automatically filled from verified SKU or explicit source-marker evidence.`,resolution:t.classificationEvidence});if(t.classificationConfirmed)');
 // All source types use the same aggregation after their rows are validated.
 replaceOnce('async function _e(e){', 'async function _eRaw(e){');
 app = 'import { mergeShipmentModel, appendMergeSources } from "./shipment-merge-v4.js";\n' + app;
 replaceOnce('async function _eRaw(e){', 'async function _e(e){const model=mergeShipmentModel(await _eRaw(e));model.checks=ge(model.rows,model.issues);return model;}async function _eRaw(e){');
 replaceOnce('async function Ee(e){', 'async function Ee(e){if(e.issues?.some(issue=>issue.severity===`error`&&issue.field===`Merge`))throw Error(`Resolve the shipment merge conflicts before creating a workbook.`);');
 replaceOnce('let h=E.default.write(i,{type:`array`,bookType:`xlsx`,cellStyles:!0,bookSST:!0})', 'appendMergeSources(i,e,E.default);let h=E.default.write(i,{type:`array`,bookType:`xlsx`,cellStyles:!0,bookSST:!0})');
+// R7: resolve safely without modal dialogs; any uncertainty stays editable in-page.
+app = app.replace('async function be(e,t){let n=await oe(e,t);', 'async function be(e,t,prepared){let n=prepared||await oe(e,t);');
+app = app.replace('if(t.product===`Jewelry`)r.push', 'if(e.descriptionUnresolved)r.push({id:`pdf-${e.lineNumber}-description`,severity:`error`,sourceRow:n,field:`Item Description`,message:`Description for SKU ${e.sku} is not yet reliable.`,resolution:e.descriptionUnresolved});if(t.product===`Jewelry`)r.push');
+app = app.replace('Review the description and supply an explicit product category in a source spreadsheet before exporting.', 'No unambiguous product marker or verified SKU category was found. Use the inline fields below; no category was guessed.');
+app = app.replace('You reviewed the scanned description for SKU ${e.sku}.', 'Description for SKU ${e.sku} was resolved from independent local image readings.');
+app = app.replace('sourcePages:n.pages,issues:l', 'sourcePages:n.pages,pdfSource:n,issues:l');
+app = app.replace('e.hawb||e.invoiceNumber||n.invoiceNumber])]', 'e.hawb||``])]');
+app = app.replace('a.issues.length>0&&', 'a.pdfSource&&createInlineReviewElement(w,a,async edits=>{const prepared={...a.pdfSource,lines:a.pdfSource.lines.map(line=>{const edit=edits.find(edit=>edit.sourceRow===line.lineNumber+1&&edit.itemName===line.sku);return edit?{...line,description:edit.description,descriptionVerified:`inline-edit`,descriptionUnresolved:undefined,confirmedProduct:edit.product}:line})};const model=await be(new File([],a.sourceName),undefined,prepared);o(model);s&&URL.revokeObjectURL(s);a.downloads?.forEach(item=>URL.revokeObjectURL(item.href));c(null);if(!model.issues.some(issue=>issue.severity===`error`)||new Set(model.rows.map(row=>row.commercialInvoice+`|`+row.shipto)).size>1){if(new Set(model.rows.map(row=>row.commercialInvoice+`|`+row.shipto)).size>1){model.downloads=await buildInvoiceDownloads(model,Ee);c(model.downloads[0].href);}else c(URL.createObjectURL(await Ee(model)));}}),a.issues.length>0&&');
+app=app.replace('appendMergeSources(i,e,E.default);','appendMergeSources(i,e,E.default);appendInvoiceEvidence(i,e,E.default);');
+app='import { createInlineReviewElement, appendInvoiceEvidence, createInlineExtractionElement } from "./invoice-inline-v7.js";\n'+app;
+app=app.replace('async function oe(e,t){return (await import("./invoice-pdf.js")).readInvoicePdf(e,t)}','async function oe(e,t){const read=(await import("./invoice-pdf.js")).readInvoicePdf;return /\\.zip$/i.test(e.name)?(await import("./invoice-zip-v7.js")).readPdfArchive(e,E.default,read,t):read(e,t)}');
+app=app.replace('if(/\\.pdf$/i.test(e.name))return be(e,t);','if(/\\.(pdf|zip)$/i.test(e.name))return be(e,t);');
+app=app.replaceAll('XLSX, XLS, CSV or PDF','XLSX, XLS, CSV, PDF or PDF ZIP').replace('.xlsx,.xls,.csv,.pdf,application/pdf','.xlsx,.xls,.csv,.pdf,.zip,application/pdf,application/zip');
+app=app.replace('xlsx?|csv|pdf)$/i','xlsx?|csv|pdf|zip)$/i');
+app=app.replace('[p,m]=(0,w.useState)(`Preparing file…`);','[p,m]=(0,w.useState)(`Preparing file…`),[recovery,setRecovery]=(0,w.useState)(null);');
+app=app.replace('n(e),o(null),c(``),u(``)','n(e),o(null),c(``),u(``),setRecovery(null)');
+app=app.replace('catch(e){o(null),console.error(e),u(Ae(e))}', 'catch(e){o(null),setRecovery(e.sourcePages?e:null),console.error(e),u(Ae(e))}');
+app=app.replace('n(null),o(null),c(``),u(``)', 'n(null),o(null),c(``),u(``),setRecovery(null)');
+app=app.replace('className:`workspace-grid`,children:[', 'className:`workspace-grid`,children:[createInlineExtractionElement(w,recovery,async pages=>{const parsed=(await import("./invoice-pdf-v7.js")).parseCorrectedPages(pages,t.name,recovery.sourcePages);const model=await be(t,undefined,parsed);o(model);setRecovery(null);u(``);if(!model.issues.some(issue=>issue.severity===`error`)||new Set(model.rows.map(row=>row.commercialInvoice+`|`+row.shipto)).size>1){if(new Set(model.rows.map(row=>row.commercialInvoice+`|`+row.shipto)).size>1){model.downloads=await buildInvoiceDownloads(model,Ee);c(model.downloads[0].href);}else c(URL.createObjectURL(await Ee(model)));}}),');
+// Export only independent, verified invoices while other rows remain editable.
+app=app.replace('"./invoice-downloads.js"','"./invoice-downloads-v7.js"');
+app=app.replace('if(n===0){m(`Building Excel file…`);','if(n===0||(e.sourceKind===`pdf`&&new Set(e.rows.map(row=>row.commercialInvoice+`|`+row.shipto)).size>1)){m(`Building Excel file…`);');
+app=app.replace('a.downloads?.length>1&&s&&!d&&v===0?', 'a.downloads?.length>0&&s&&!d?');
+app=app.replaceAll('e.downloads[0].href','e.downloads[0]?.href||``').replaceAll('model.downloads[0].href','model.downloads[0]?.href||``');
+app=app.replace('e.issues?.some(issue=>issue.severity===`error`&&issue.field===`Merge`)','e.issues?.some(issue=>issue.severity===`error`)');
+app=app.replace('Resolve the shipment merge conflicts before creating a workbook.','Resolve the flagged fields or shipment merge conflicts before creating this workbook.');
 // Version helper imports too: cached first-release modules must not mix with this build.
-app = app.replace('"./invoice-pdf.js"', '"./invoice-pdf-v6.js"').replace('"./invoice-classification.js"', '"./invoice-classification-v6.js"');
-write('assets/index-VELLUM-PDF6-20261020.js', app);
-for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF6-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF6-20261020.js']]) {
-  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF6-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF6-20261020.js'));
+app = app.replace('"./invoice-pdf.js"', '"./invoice-pdf-v7.js"').replace('"./invoice-classification.js"', '"./invoice-classification-v7.js"');
+write('assets/index-VELLUM-PDF7-20261020.js', app);
+for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF7-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF7-20261020.js']]) {
+  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF7-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF7-20261020.js'));
 }
-write('index.html', read('index.html').replace('index-VELLUM-PDF5-20261020.js','index-VELLUM-PDF6-20261020.js').replace('pdf-repair-20261020-r5','pdf-repair-20261020-r6').replace('index-VELLUM-PDF4-20261020.js','index-VELLUM-PDF6-20261020.js').replace('pdf-repair-20261020-r4','pdf-repair-20261020-r5').replace('index-VELLUM-PDF3-20261020.js','index-VELLUM-PDF6-20261020.js').replace('pdf-repair-20261020-r3','pdf-repair-20261020-r4').replace('index-VELLUM-PDF2-20261020.js', 'index-VELLUM-PDF6-20261020.js').replace('pdf-repair-20261020-r2', 'pdf-repair-20261020-r4').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF6-20261020.js').replace('index-VELLUM-PDF-20261020.js', 'index-VELLUM-PDF6-20261020.js').replace('pdf-repair-20261020\"', 'pdf-repair-20261020-r4\"'));
+write('index.html', read('index.html').replace('index-VELLUM-PDF6-20261020.js','index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r6','pdf-repair-20261020-r7').replace('index-VELLUM-PDF5-20261020.js','index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r5','pdf-repair-20261020-r6').replace('index-VELLUM-PDF4-20261020.js','index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r4','pdf-repair-20261020-r5').replace('index-VELLUM-PDF3-20261020.js','index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r3','pdf-repair-20261020-r4').replace('index-VELLUM-PDF2-20261020.js', 'index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020-r2', 'pdf-repair-20261020-r4').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF7-20261020.js').replace('index-VELLUM-PDF-20261020.js', 'index-VELLUM-PDF7-20261020.js').replace('pdf-repair-20261020\"', 'pdf-repair-20261020-r4\"'));
 console.log('Built PDF-repair app from preserved SAFE3 baseline.');
