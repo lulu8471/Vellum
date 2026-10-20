@@ -4,10 +4,10 @@ Browser-local preparation of shipment Excel files from spreadsheets and COMPASS 
 
 ## PDF repair (2026-10-20)
 
-- `assets/invoice-pdf-v4.js` is the maintained PDF parser and local OCR pipeline.
-- `assets/invoice-classification-v4.js` handles conservative category inference and explicit OCR-description review.
+- `assets/invoice-pdf-v5.js` is the maintained PDF parser and local OCR pipeline.
+- `assets/invoice-classification-v5.js` handles conservative category inference and explicit OCR-description review.
 - `scripts/build-app.mjs` deterministically integrates these modules into the existing deployed application. Run `node scripts/build-app.mjs` after changing integration hooks. The repository contains deployed assets, not the original React source project; the verified `index-VELLUM-SAFE3-20260826.js` is preserved as the integration baseline.
-- `index.html` loads `index-VELLUM-PDF4-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
+- `index.html` loads `index-VELLUM-PDF5-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
 
 ### Reliability and privacy
 
@@ -42,3 +42,9 @@ Shipment rows with a blank Carton ID are retained, with a visible warning and th
 CSV, Excel and PDF rows share `assets/shipment-merge-v4.js`. Only matching invoice + Shipto + SKU rows combine. Quantities and extended values are summed; unit prices, unit freight and unit grams stay unchanged. Different unit values or conflicting descriptions/classifications block export with a source-row-specific review message instead of choosing the first value or inventing a blended price. Rounding that cannot fit the existing quantity × unit-value formulas also blocks.
 
 Multiple carton and HAWB identifiers are explicitly retained. A `Source rows` worksheet records every original row behind a merged output, including blank identifiers. Different invoices/destinations/SKUs remain separate. Reapplying aggregation is idempotent; identical distinct source rows are counted once each, not deleted as presumed duplicates. Sequence formulas are generated after merging. Prior released dependency graphs remain unchanged.
+
+### Fifth repair: verified PDF categories
+
+A category-only SKU evidence table automatically fills four previously unresolved Ring categories. Evidence is independent review of the original source images' explicit ring markers and sizes; exact public SKU searches did not yield a verifiable product page, so this is not presented as an official online lookup. The UI displays the verification basis. No private invoice identifiers, prices or source descriptions are included in the table.
+
+A bounded compact `WINGSRG` + numeric size pattern is recognized. Arbitrary `TRG`, `RGSS`, and unknown words are not assumed to be rings. Unknown categories still require review. Category evidence never replaces gemstone details, ring sizes or other source description text: OCR description review remains separate. No document or extracted row is sent to a product lookup or OCR service.

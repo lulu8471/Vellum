@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseInvoice,parseDocument,validateInvoice,parseLine} from '../assets/invoice-pdf-v4.js';
+import {parseInvoice,parseDocument,validateInvoice,parseLine} from '../assets/invoice-pdf-v5.js';
 import {buildInvoiceDownloads} from '../assets/invoice-downloads.js';
-import {reviewInvoiceProducts} from '../assets/invoice-classification-v4.js';
+import {reviewInvoiceProducts} from '../assets/invoice-classification-v5.js';
 const line='1 7113.19.0000 12345678 TEST RING US 2.50 gm 2.00 $10.25 $20.50';
 function invoice(id='123456',rows=line,totals='Total # of Pieces 2.00\nProduct Total Value USD $20.50\nTotal Weight 5.00 gm\nGrand Total Value USD $20.50') { return `Commercial Invoice: ${id}\nSterling Shipment # 123456789\nShip To\n99 - Example Depot\n# HTS SKU Description\n${rows}\n${totals}` }
 test('integer quantities printed with decimal zeros remain exact integers',()=>{for(const q of ['2','2.0','2.00','2.000'])assert.equal(parseLine(line.replace('2.00 $',q+' $')).quantity,2);assert.equal(parseLine(line.replace('2.00 $','2.50 $')),null)});
@@ -20,7 +20,7 @@ const modelRow=(invoice,shipto,price)=>({commercialInvoice:invoice,shipto,shippe
 test('download models have independent rows, totals and unambiguous names',async()=>{const models=[];const input={rows:[modelRow('123456','99',10),modelRow('654321','99',20),modelRow('123456','88',30)],totals:{totalValue:999}};const out=await buildInvoiceDownloads(input,async model=>{models.push(model);return new Blob(['test'])});try{assert.deepEqual(out.map(x=>x.name),['123456-99 INV.xlsx','654321 INV.xlsx','123456-88 INV.xlsx']);assert.deepEqual(models.map(x=>x.totals.totalValue),[11,21,31]);for(const m of models)assert.equal(m.rows.length,1);assert.equal(input.totals.totalValue,999)}finally{out.forEach(x=>URL.revokeObjectURL(x.href))}});
 test('download construction errors reject entire operation',async()=>{let calls=0;await assert.rejects(buildInvoiceDownloads({rows:[modelRow('123456','99',10),modelRow('654321','99',20)]},async()=>{if(++calls===2)throw Error('Workbook failed');return new Blob(['test'])}),/Workbook failed/)});
 
-import {combineInvoices} from '../assets/invoice-pdf-v4.js';
+import {combineInvoices} from '../assets/invoice-pdf-v5.js';
 test('PDF flattening retains repeated SKU rows for common post-classification merge',()=>{const source=parseInvoice(invoice());source.lines.push({...source.lines[0],lineNumber:2});const merged=combineInvoices([source]);assert.equal(merged.lines.length,2);assert.equal(merged.lines[0].quantity,2);assert.equal(merged.lines[1].quantity,2)});
 test('same SKU in different invoices remains independent including zero value',()=>{const a=parseInvoice(invoice()),b=parseInvoice(invoice('654321').replaceAll('$10.25','$0.00').replaceAll('$20.50','$0.00'));const result=combineInvoices([a,b]);assert.equal(result.lines.length,2);assert.equal(result.lines[1].unitCost,0);assert.equal(result.lines[0].invoiceNumber,'123456');assert.equal(result.lines[1].invoiceNumber,'654321')});
 test('PDF flattening preserves differing carton metadata for common merge review',()=>{const a=parseInvoice(invoice()),b=parseInvoice(invoice());a.cartonNumber='123';b.cartonNumber='456';const r=combineInvoices([a,b]);assert.equal(r.lines.length,2);assert.deepEqual(r.lines.map(x=>x.cartonNumber),['123','456'])});
