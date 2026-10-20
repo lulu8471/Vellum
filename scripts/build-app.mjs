@@ -42,11 +42,17 @@ replaceOnce('[[`Carton ID`,e[`Carton ID`]],', '[[`Item Name`,e[`Item Name`]],');
 replaceOnce('let b=le(e[`Item Name`]);return{', 'le(e[`Carton ID`])||u.push({id:`${t}-optional-carton`,severity:`warning`,sourceRow:t,field:`Carton ID`,message:`Carton ID is blank in the source. The row is retained with a blank carton; no identifier was inferred.`});let b=le(e[`Item Name`]);return{');
 // Include the unassigned group in mixed-document filenames instead of implying one HAWB.
 replaceOnce('h=m.length?m.join(`_`):', 'h=f.includes(`Unassigned`)&&m.length?`Multiple shipments`:m.length?m.join(`_`):');
+// All source types use the same aggregation after their rows are validated.
+replaceOnce('async function _e(e){', 'async function _eRaw(e){');
+app = 'import { mergeShipmentModel, appendMergeSources } from "./shipment-merge-v4.js";\n' + app;
+replaceOnce('async function _eRaw(e){', 'async function _e(e){const model=mergeShipmentModel(await _eRaw(e));model.checks=ge(model.rows,model.issues);return model;}async function _eRaw(e){');
+replaceOnce('async function Ee(e){', 'async function Ee(e){if(e.issues?.some(issue=>issue.severity===`error`&&issue.field===`Merge`))throw Error(`Resolve the shipment merge conflicts before creating a workbook.`);');
+replaceOnce('let h=E.default.write(i,{type:`array`,bookType:`xlsx`,cellStyles:!0,bookSST:!0})', 'appendMergeSources(i,e,E.default);let h=E.default.write(i,{type:`array`,bookType:`xlsx`,cellStyles:!0,bookSST:!0})');
 // Version helper imports too: cached first-release modules must not mix with this build.
-app = app.replace('"./invoice-pdf.js"', '"./invoice-pdf-v3.js"').replace('"./invoice-classification.js"', '"./invoice-classification-v3.js"');
-write('assets/index-VELLUM-PDF3-20261020.js', app);
-for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF3-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF3-20261020.js']]) {
-  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF3-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF3-20261020.js'));
+app = app.replace('"./invoice-pdf.js"', '"./invoice-pdf-v4.js"').replace('"./invoice-classification.js"', '"./invoice-classification-v4.js"');
+write('assets/index-VELLUM-PDF4-20261020.js', app);
+for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF4-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF4-20261020.js']]) {
+  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF4-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF4-20261020.js'));
 }
-write('index.html', read('index.html').replace('index-VELLUM-PDF2-20261020.js', 'index-VELLUM-PDF3-20261020.js').replace('pdf-repair-20261020-r2', 'pdf-repair-20261020-r3').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF3-20261020.js').replace('index-VELLUM-PDF-20261020.js', 'index-VELLUM-PDF3-20261020.js').replace('pdf-repair-20261020\"', 'pdf-repair-20261020-r3\"'));
+write('index.html', read('index.html').replace('index-VELLUM-PDF3-20261020.js','index-VELLUM-PDF4-20261020.js').replace('pdf-repair-20261020-r3','pdf-repair-20261020-r4').replace('index-VELLUM-PDF2-20261020.js', 'index-VELLUM-PDF4-20261020.js').replace('pdf-repair-20261020-r2', 'pdf-repair-20261020-r4').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF4-20261020.js').replace('index-VELLUM-PDF-20261020.js', 'index-VELLUM-PDF4-20261020.js').replace('pdf-repair-20261020\"', 'pdf-repair-20261020-r4\"'));
 console.log('Built PDF-repair app from preserved SAFE3 baseline.');

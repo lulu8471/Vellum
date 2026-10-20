@@ -4,10 +4,10 @@ Browser-local preparation of shipment Excel files from spreadsheets and COMPASS 
 
 ## PDF repair (2026-10-20)
 
-- `assets/invoice-pdf-v3.js` is the maintained PDF parser and local OCR pipeline.
-- `assets/invoice-classification-v3.js` handles conservative category inference and explicit OCR-description review.
+- `assets/invoice-pdf-v4.js` is the maintained PDF parser and local OCR pipeline.
+- `assets/invoice-classification-v4.js` handles conservative category inference and explicit OCR-description review.
 - `scripts/build-app.mjs` deterministically integrates these modules into the existing deployed application. Run `node scripts/build-app.mjs` after changing integration hooks. The repository contains deployed assets, not the original React source project; the verified `index-VELLUM-SAFE3-20260826.js` is preserved as the integration baseline.
-- `index.html` loads `index-VELLUM-PDF3-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
+- `index.html` loads `index-VELLUM-PDF4-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
 
 ### Reliability and privacy
 
@@ -36,3 +36,9 @@ Each invoice/destination in a PDF is validated independently and gets its own na
 ### Third repair: CSV row completeness
 
 Shipment rows with a blank Carton ID are retained, with a visible warning and the original blank value. Candidate rows are recognized by SKU or invoice number; missing SKUs block export rather than disappearing. Quoted CSV fields and prefixed report lines use the existing spreadsheet reader. Missing HAWB remains explicitly unassigned. Previously deployed dependency graphs are preserved, and this release uses isolated PDF3 modules. An owner-confirmed category override is limited to its specific SKU; no general BOR rule is inferred.
+
+### Fourth repair: consistent quantity aggregation
+
+CSV, Excel and PDF rows share `assets/shipment-merge-v4.js`. Only matching invoice + Shipto + SKU rows combine. Quantities and extended values are summed; unit prices, unit freight and unit grams stay unchanged. Different unit values or conflicting descriptions/classifications block export with a source-row-specific review message instead of choosing the first value or inventing a blended price. Rounding that cannot fit the existing quantity × unit-value formulas also blocks.
+
+Multiple carton and HAWB identifiers are explicitly retained. A `Source rows` worksheet records every original row behind a merged output, including blank identifiers. Different invoices/destinations/SKUs remain separate. Reapplying aggregation is idempotent; identical distinct source rows are counted once each, not deleted as presumed duplicates. Sequence formulas are generated after merging. Prior released dependency graphs remain unchanged.
