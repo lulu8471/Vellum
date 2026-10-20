@@ -4,10 +4,10 @@ Browser-local preparation of shipment Excel files from spreadsheets and COMPASS 
 
 ## PDF repair (2026-10-20)
 
-- `assets/invoice-pdf-v5.js` is the maintained PDF parser and local OCR pipeline.
-- `assets/invoice-classification-v5.js` handles conservative category inference and explicit OCR-description review.
+- `assets/invoice-pdf-v6.js` is the maintained PDF parser and local OCR pipeline.
+- `assets/invoice-classification-v6.js` handles conservative category inference and explicit OCR-description review.
 - `scripts/build-app.mjs` deterministically integrates these modules into the existing deployed application. Run `node scripts/build-app.mjs` after changing integration hooks. The repository contains deployed assets, not the original React source project; the verified `index-VELLUM-SAFE3-20260826.js` is preserved as the integration baseline.
-- `index.html` loads `index-VELLUM-PDF5-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
+- `index.html` loads `index-VELLUM-PDF6-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
 
 ### Reliability and privacy
 
@@ -48,3 +48,7 @@ Multiple carton and HAWB identifiers are explicitly retained. A `Source rows` wo
 A category-only SKU evidence table automatically fills four previously unresolved Ring categories. Evidence is independent review of the original source images' explicit ring markers and sizes; exact public SKU searches did not yield a verifiable product page, so this is not presented as an official online lookup. The UI displays the verification basis. No private invoice identifiers, prices or source descriptions are included in the table.
 
 A bounded compact `WINGSRG` + numeric size pattern is recognized. Arbitrary `TRG`, `RGSS`, and unknown words are not assumed to be rings. Unknown categories still require review. Category evidence never replaces gemstone details, ring sizes or other source description text: OCR description review remains separate. No document or extracted row is sent to a product lookup or OCR service.
+
+### Sixth repair: independently reread scanned total weight
+
+When scanned weights do not reconcile, local OCR now rereads the printed Total Weight numeric cell as well as item weights. A unique label/cell and high-confidence decimal recognition are required. The total is never copied from a line weight or calculated sum. Unresolved or genuinely inconsistent totals still block export. The same bounded canvas limits and cleanup apply; no source data is uploaded for recognition.

@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {decimal,parseLine,parseInvoice,validateInvoice,textLines} from '../assets/invoice-pdf-v5.js';
+import {decimal,parseLine,parseInvoice,validateInvoice,textLines} from '../assets/invoice-pdf-v6.js';
 const row='1 7113.19.0000 12345678 TEST RING US 2.50 gm 2 $10.25 $20.50';
 const base=(rows=row, totals='Total # of Pieces 2\nProduct Total Value USD $20.50\nTotal Weight 5.00 gm\nGrand Total Value USD $20.50')=>'Commercial Invoice: 123456\nSterling Shipment # 123456789\nShip To\n99 - Test Depot\n# HTS SKU Description\n'+rows+'\n'+totals;
 const errors=(text,filename='COMPASS-123456-1-99.pdf')=>validateInvoice(parseInvoice(text,filename));
@@ -21,7 +21,7 @@ test('text layer positions reconstruct left-to-right then top-to-bottom',()=>ass
 
 test("missing both amount totals blocks",()=>assert.ok(errors(base().replace(/(?:Product|Grand) Total Value USD \$20\.50/g,'')).length));
 
-import {classifyInvoiceItem,reviewInvoiceDescriptions,inferProduct} from '../assets/invoice-classification-v5.js';
+import {classifyInvoiceItem,reviewInvoiceDescriptions,inferProduct} from '../assets/invoice-classification-v6.js';
 test('classification preserves document description and origin despite catalog',()=>{const r=classifyInvoiceItem('12345678','NEW RING','Italy',{description:'OLD RING',product:'Ring',family:'FINE JEWELRY',coo:'US'});assert.equal(r.description,'NEW RING');assert.equal(r.coo,'IT')});
 test('conflicting category requires explicit decision',()=>{const saved={product:'Ring',family:'FINE JEWELRY'};assert.throws(()=>classifyInvoiceItem('12345678','TEST ER','US',saved,()=>false),/confirmation/);const r=classifyInvoiceItem('12345678','TEST ER','US',saved,()=>true);assert.equal(r.product,'Earrings');assert.equal(r.classificationConfirmed,true)});
 test('OCR description glyph discrepancy cancellation stops import',()=>{assert.throws(()=>reviewInvoiceDescriptions([{sku:'12345678',description:'DI 228'}],'pdf-ocr',{'12345678':{description:'DI 2.28'}},()=>null),/needs review/)});
