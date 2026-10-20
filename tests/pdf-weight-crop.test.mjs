@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {refineWeights,parseInvoice,validateInvoice} from '../assets/invoice-pdf-v9.js';
+import {refineWeights,parseInvoice,validateInvoice} from '../assets/invoice-pdf-v10.js';
 const row='1 7113.19.0000 12345678 TEST RING US 2.50 gm 1 $10.00 $10.00';
 const text=(rows=row,total='250')=>`Commercial Invoice: 123456\nSterling Shipment # 123456789\nShip To\n99 - Test Depot\n# HTS SKU Description\n${rows}\nTotal # of Pieces 1\nProduct Total Value USD $10.00\nTotal Weight ${total} gm\nGrand Total Value USD $10.00`;
 const tsv=lines=>'header\n'+lines.flatMap((words,i)=>words.map((word,j)=>['5','1','1','1',String(i+1),String(j+1),String(20+j*30),String(20+i*30),'20','15','95',word].join('\t'))).join('\n');
@@ -11,3 +11,9 @@ test('crop result inconsistent with item sum remains blocked rather than replace
 test('ambiguous multiple total labels are not cropped or substituted',async()=>{const r=await run(text(),[['Total','Weight','250','gm'],['Total','Weight','250','gm']]);assert.equal(r.calls,0);assert.equal(r.output,text())});
 test('duplicate SKU weights cannot be rewritten from a single crop',async()=>{const input=text(row+'\n'+row.replace(/^1 /,'2 '));const r=await run(input,[['12345678','2.50','gm']]);assert.equal(r.calls,0);assert.equal(r.output,input)});
 test('matching totals cause no crop recognition at all',async()=>{const r=await run(text(row,'2.50'),[['Total','Weight','2.50','gm']]);assert.equal(r.calls,0)});
+test('correlated crop misread cannot overwrite an already-decimal item weight to match bad footer',async()=>{
+ const source=text(row.replace('2.50 gm','6.55 gm'),'655').replace('$10.00','$10.00');
+ const r=await run(source,[['1','7113.19.0000','12345678','TEST','RING','US','6.55','gm','1','$10.00','$10.00'],['Total','Weight','655','gm']],'6.35');
+ assert.equal(r.calls,1);assert.match(r.output,/US 6.55 gm/);assert.match(r.output,/Total Weight 6.35/);assert.ok(validateInvoice(parseInvoice(r.output)).length);
+});
+test('already-decimal total and item disagreement triggers alternate-page OCR, not crop reconciliation',async()=>{const source=text(row,'2.70');const r=await run(source,[['Total','Weight','2.70','gm'],['12345678','2.50','gm']],'2.70');assert.equal(r.calls,0);assert.equal(r.output,source)});

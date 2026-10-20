@@ -4,10 +4,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {appendInvoiceEvidence,withoutDescriptionNotices,applySourceDescriptionPolicy} from '../assets/invoice-inline-v9.js';
+import {appendInvoiceEvidence,withoutDescriptionNotices,applySourceDescriptionPolicy} from '../assets/invoice-inline-v10.js';
 import {mergeShipmentModel,appendMergeSources} from '../assets/shipment-merge-v4.js';
 function bundle() {
- let code=fs.readFileSync(new URL('../assets/index-VELLUM-PDF9-20261020.js',import.meta.url),'utf8');
+ let code=fs.readFileSync(new URL('../assets/index-VELLUM-PDF10-20261020.js',import.meta.url),'utf8');
  code=code.replace(/^(?:import[^\n]+\n)+/,'').replace(/^document.documentElement.dataset.vellumBuild=[^;]+;/,'');
  code=code.replace(/\(function\(\)\{let e=document\.createElement\(`link`\)[\s\S]*?\}\)\(\);var p=/,'var p=');
  const mount=code.lastIndexOf('(0,T.createRoot)');assert.ok(mount>0,'Bundle bootstrap seam changed; review test adapter');
@@ -44,7 +44,7 @@ test('different SKUs in one invoice and destination remain separate',async()=>{c
 
 test('sub-cent source rounding cannot change after merged Excel formula recalculates',async()=>{const r=row({'Shipped Qty':'3','Unit Price':'0.333','Extended Merch Line Value':'1.00','Unit Freight':'0','Extended Freight Line Value':'0','Total Line Value':'1.00'});const m=await api.parse(input([r,r]));assert.equal(m.rows.length,2);assert.ok(m.issues.some(x=>x.id.startsWith('merge-rounding')&&x.severity==='error'));await assert.rejects(api.write(m),/review|merge|conflict/i)});
 
-import {readPdfArchive} from '../assets/invoice-zip-v7.js';
+import {readPdfArchive} from '../assets/invoice-zip-v10.js';
 const archiveFile=entries=>{const c=api.xlsx.CFB.utils.cfb_new();for(const [name,content]of entries)api.xlsx.CFB.utils.cfb_add(c,name,new TextEncoder().encode(content));return new File([api.xlsx.CFB.write(c,{type:'array',fileType:'zip'})],'synthetic.zip')};
 test('local ZIP parses separate invoice files and preserves source names and totals',async()=>{let calls=0;const parsed=await readPdfArchive(archiveFile([['a.pdf','a'],['b.pdf','b']]),api.xlsx,async file=>({pages:1,extractionMode:'pdf-text',invoices:[{invoiceNumber:String(++calls),shipto:'99',declaredTotals:{quantity:1,value:10,weightGrams:2},lines:[{sku:'12345678',lineNumber:1,quantity:1,unitCost:10,extendedCost:10}]}]}));assert.equal(calls,2);assert.equal(parsed.lines.length,2);assert.equal(parsed.declaredTotals.quantity,2);assert.equal(parsed.declaredTotals.value,20);assert.deepEqual(parsed.lines.map(x=>x.invoiceNumber),['1','2']);assert.deepEqual(parsed.lines.map(x=>x.sourceFilename),['a.pdf','b.pdf'])});
 test('duplicate PDF bytes in ZIP are rejected to prevent double counting',async()=>{await assert.rejects(readPdfArchive(archiveFile([['a.pdf','same'],['b.pdf','same']]),api.xlsx,async()=>({pages:1,extractionMode:'pdf-text',invoices:[{lines:[],declaredTotals:{quantity:0,value:0,weightGrams:0}}]})),/duplicate/i)});
@@ -66,3 +66,4 @@ test('CSV, XLS and XLSX do not solicit name/category review; missing category re
   await api.write(m);
  }
 });
+test('ZIP numeric evidence retains source file and physical page provenance',async()=>{const parsed=await readPdfArchive(archiveFile([['a.pdf','a'],['b.pdf','b']]),api.xlsx,async file=>({pages:1,extractionMode:'pdf-ocr',numericEvidence:[{page:1,field:'item',sku:'12345678',occurrence:1,raw:'2.50',value:2.5,scale:3,psm:6,directDecimal:true}],invoices:[{invoiceNumber:file.name,shipto:'99',declaredTotals:{quantity:1,value:10,weightGrams:2.5},lines:[{sku:'12345678',lineNumber:1,quantity:1,unitCost:10,extendedCost:10}]}]}));assert.deepEqual(parsed.numericEvidence.map(r=>r.sourceFilename),['a.pdf','b.pdf']);assert.deepEqual(parsed.numericEvidence.map(r=>r.page),[1,1])});

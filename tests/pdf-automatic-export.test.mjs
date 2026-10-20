@@ -3,12 +3,12 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {appendInvoiceEvidence,createInlineReviewElement,withoutDescriptionNotices,applySourceDescriptionPolicy} from '../assets/invoice-inline-v9.js';
+import {appendInvoiceEvidence,createInlineReviewElement,withoutDescriptionNotices,applySourceDescriptionPolicy} from '../assets/invoice-inline-v10.js';
 import {mergeShipmentModel,appendMergeSources} from '../assets/shipment-merge-v4.js';
-import {classifyInvoiceItem,reviewInvoiceDescriptions,reviewInvoiceProducts,inferProduct} from '../assets/invoice-classification-v9.js';
-import {buildInvoiceDownloads} from '../assets/invoice-downloads-v9.js';
+import {classifyInvoiceItem,reviewInvoiceDescriptions,reviewInvoiceProducts,inferProduct} from '../assets/invoice-classification-v10.js';
+import {buildInvoiceDownloads} from '../assets/invoice-downloads-v10.js';
 function bundle(){
- let code=fs.readFileSync(new URL('../assets/index-VELLUM-PDF9-20261020.js',import.meta.url),'utf8');
+ let code=fs.readFileSync(new URL('../assets/index-VELLUM-PDF10-20261020.js',import.meta.url),'utf8');
  code=code.replace(/^(?:import[^\n]+\n)+/,'').replace(/^document.documentElement.dataset.vellumBuild=[^;]+;/,'');
  code=code.replace(/\(function\(\)\{let e=document\.createElement\(`link`\)[\s\S]*?\}\)\(\);var p=/,'var p=');
  code=code.slice(0,code.lastIndexOf('(0,T.createRoot)'))+';globalThis.api={parse:be,write:Ee,xlsx:E.default};';
@@ -53,16 +53,16 @@ test('same SKU in distinct invoices remains two rows in one workbook',async()=>{
  assert.equal(m.issues.filter(i=>i.severity==='error').length,0);
  const links=await buildInvoiceDownloads(m,api.write);assert.equal(links.length,1);links.forEach(l=>URL.revokeObjectURL(l.href));
 });
-test('R9 entry and dynamic PDF/OCR helpers share isolated R9 app graph',()=>{
+test('R10 entry and dynamic PDF/OCR helpers share isolated R10 app graph',()=>{
  const read=n=>fs.readFileSync(new URL('../'+n,import.meta.url),'utf8');
- assert.ok(read('index.html').includes('index-VELLUM-PDF9-20261020.js'));
- const app=read('assets/index-VELLUM-PDF9-20261020.js');
+ assert.ok(read('index.html').includes('index-VELLUM-PDF10-20261020.js'));
+ const app=read('assets/index-VELLUM-PDF10-20261020.js');
  assert.ok(!app.includes('./src-DGBeAv_F.js'));
- assert.ok(app.includes('./ocr-PDF9-20261020.js'));
- for(const name of ['invoice-classification-v9.js','invoice-inline-v9.js','invoice-downloads-v9.js','invoice-pdf-v9.js'])assert.ok(app.includes(name));
- for(const name of ['pdf-PDF9-20261020.js','ocr-PDF9-20261020.js']){
-   assert.ok(read('assets/invoice-pdf-v9.js').includes(name));
-   assert.ok(read('assets/'+name).includes('index-VELLUM-PDF9-20261020.js'));
+ assert.ok(app.includes('./ocr-PDF10-20261020.js'));
+ for(const name of ['invoice-classification-v10.js','invoice-inline-v10.js','invoice-downloads-v10.js','invoice-pdf-v10.js'])assert.ok(app.includes(name));
+ for(const name of ['pdf-PDF10-20261020.js','ocr-PDF10-20261020.js']){
+   assert.ok(read('assets/invoice-pdf-v10.js').includes(name));
+   assert.ok(read('assets/'+name).includes('index-VELLUM-PDF10-20261020.js'));
    assert.ok(!read('assets/'+name).includes('index-VELLUM-PDF7-20261020.js'));
  }
 });
@@ -87,9 +87,9 @@ test('text and scanned PDFs use bounded RG7 directly without reliability or conf
  }
 });
 test('page-wide OCR confidence is not a reliability prompt or gate before numeric validation',async()=>{
- const code=fs.readFileSync(new URL('../assets/invoice-pdf-v9.js',import.meta.url),'utf8');
+ const code=fs.readFileSync(new URL('../assets/invoice-pdf-v10.js',import.meta.url),'utf8');
  const scan=code.slice(code.indexOf('async function scanPage('),code.indexOf('export async function readInvoicePdf'));
- const context={Math,document:{createElement:()=>({width:0,height:0,getContext:()=>({})})},timeout:p=>p,refineWeights:async(c,w,text)=>text,refineDescriptions:async()=>[]};
+ const context={Math,document:{createElement:()=>({width:0,height:0,getContext:()=>({})})},timeout:p=>p,observeWeights:()=>[],refineWeights:async(c,w,text)=>text,refineDescriptions:async()=>[]};
  vm.createContext(context);vm.runInContext(scan+';globalThis.scan=scanPage;',context);
  const page={getViewport:({scale})=>({width:100*scale,height:100*scale}),render:()=>({promise:Promise.resolve()})};
  const worker={setParameters:async()=>{},recognize:async()=>({data:{text:'SOURCE TEXT',confidence:40,tsv:''}})};

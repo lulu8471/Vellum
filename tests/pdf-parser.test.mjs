@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {decimal,parseLine,parseInvoice,validateInvoice,textLines} from '../assets/invoice-pdf-v9.js';
+import {decimal,parseLine,parseInvoice,validateInvoice,textLines} from '../assets/invoice-pdf-v10.js';
 const row='1 7113.19.0000 12345678 TEST RING US 2.50 gm 2 $10.25 $20.50';
 const base=(rows=row, totals='Total # of Pieces 2\nProduct Total Value USD $20.50\nTotal Weight 5.00 gm\nGrand Total Value USD $20.50')=>'Commercial Invoice: 123456\nSterling Shipment # 123456789\nShip To\n99 - Test Depot\n# HTS SKU Description\n'+rows+'\n'+totals;
 const errors=(text,filename='COMPASS-123456-1-99.pdf')=>validateInvoice(parseInvoice(text,filename));
@@ -39,7 +39,7 @@ test('French origin is parsed as a legitimate source country',()=>{for(const cou
 test('bounded OCR currency label USB retains numeric totals unchanged',()=>{const r=parseInvoice(base().replaceAll('USD','USB'));assert.equal(r.declaredTotals.value,20.5);assert.deepEqual(validateInvoice(r),[])});
 test('matching full-page and crop descriptions at high confidence can resolve automatically',()=>{const [r]=reviewInvoiceDescriptions([{sku:'12345678',description:'TEST RING',descriptionVerified:'local-crop-agreement',descriptionConfidence:95,descriptionReadings:[{text:'TEST RING',confidence:95},{text:'TEST RING',confidence:95}]}],'pdf-ocr',{});assert.equal(r.descriptionReviewed,'automatic');assert.equal(r.descriptionUnresolved,undefined)});
 test('mixed archive native text bypasses unnecessary OCR description review',()=>{const [r]=reviewInvoiceDescriptions([{sku:'12345678',description:'TEST RING',sourceExtractionMode:'pdf-text'}],'pdf-ocr',{});assert.equal(r.descriptionUnresolved,undefined)});
-import {parseCorrectedPages} from '../assets/invoice-pdf-v9.js';
+import {parseCorrectedPages} from '../assets/invoice-pdf-v10.js';
 test('inline extraction corrections must pass original strict arithmetic validation',()=>{assert.throws(()=>parseCorrectedPages([base(row.replace('$20.50','$20.60'))],'synthetic.pdf'),/amount|total/)});
 test('valid inline extraction keeps explicit corrected-page trace without changing input',()=>{const pages=[base()];const r=parseCorrectedPages(pages,'synthetic.pdf');assert.deepEqual(r.editedExtraction,pages);assert.notEqual(r.editedExtraction,pages);assert.equal(r.lines[0].quantity,2);assert.equal(r.declaredTotals.value,20.5);assert.equal(r.extractionMode,'pdf-ocr')});
 test('inline numeric correction retains immutable before and after page evidence',()=>{const before=[base().replace('Total Weight 5.00 gm','Total Weight 500 gm')],after=[base()];const r=parseCorrectedPages(after,'synthetic.pdf',before);assert.deepEqual(r.originalExtractionPages,before);assert.deepEqual(r.editedExtraction,after);before[0]='mutated';after[0]='mutated';assert.match(r.originalExtractionPages[0],/Total Weight 500 gm/);assert.match(r.editedExtraction[0],/Total Weight 5.00 gm/)});
