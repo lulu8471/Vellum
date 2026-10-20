@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {refineWeights,parseInvoice,validateInvoice} from '../assets/invoice-pdf-v10.js';
+import {refineWeights,parseInvoice,validateInvoice} from '../assets/invoice-pdf-v11.js';
 const row='1 7113.19.0000 12345678 TEST RING US 2.50 gm 1 $10.00 $10.00';
 const text=(rows=row,total='250')=>`Commercial Invoice: 123456\nSterling Shipment # 123456789\nShip To\n99 - Test Depot\n# HTS SKU Description\n${rows}\nTotal # of Pieces 1\nProduct Total Value USD $10.00\nTotal Weight ${total} gm\nGrand Total Value USD $10.00`;
 const tsv=lines=>'header\n'+lines.flatMap((words,i)=>words.map((word,j)=>['5','1','1','1',String(i+1),String(j+1),String(20+j*30),String(20+i*30),'20','15','95',word].join('\t'))).join('\n');

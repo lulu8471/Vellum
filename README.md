@@ -2,20 +2,21 @@
 
 Browser-local preparation of shipment Excel files from spreadsheets and COMPASS PDF invoices. The existing English UI, workbook template, spreadsheet formulas, grouping and sorting are retained.
 
-## Current behavior: automatic combined export (R10)
+## Current behavior: automatic combined export (R11)
 
 - One source PDF produces **one workbook**, with all invoice rows together in the existing Vellum main worksheet. Existing formatting, sorting, formulas, invoice identifiers and totals are preserved. Different invoices are never merged by SKU.
 - Names are used directly from extracted source text. Known bounded abbreviations (RG, ER, etc.) and verified SKU categories classify automatically. No name/category confirmation, popup or inline required field is presented.
 - Unverified wording is retained in the extraction audit only, without visible reliability notices, confidence notices, or name/category review requests for any input format. An unknown or conflicting category is explicitly `Unknown (unverified)`, with no invented commodity code or declaration unit. This does not block download or display a category confirmation. It is not a claim that OCR wording is perfect.
 - Numeric inconsistencies, missing required invoice identity, and genuine merge conflicts remain blocking. A combined source is never partially exported by silently dropping a failing invoice.
 - The `PDF extraction` audit worksheet retains original extracted descriptions, output descriptions, verification basis and classification status. Private source-reviewed delivery corrections are separate from automatic application behavior.
-- `assets/invoice-classification-v10.js`, `assets/invoice-inline-v10.js`, and `assets/invoice-downloads-v10.js` implement the new behavior. R10 PDF/OCR helpers reference the isolated R10 app. Prior versioned dependency graphs are unchanged for already-open tabs.
-- Scanned item and total weights require matching direct full-page readings at two different effective rendering scales. A decimal crop cannot overwrite an already-decimal source weight, and contradictory direct readings block export even when line/footer arithmetic agrees. Integer-printed weights remain supported when independently corroborated. This reduces correlated OCR risk; it does not guarantee perfect OCR. The passive `Numeric OCR evidence` worksheet retains raw values, source file/page, scale and segmentation mode, including ZIP imports. Other numeric fields retain their strict arithmetic validation.
+- `assets/invoice-classification-v11.js`, `assets/invoice-inline-v11.js`, and `assets/invoice-downloads-v11.js` implement the new behavior. R11 PDF/OCR helpers reference the isolated R11 app. Prior versioned dependency graphs are unchanged for already-open tabs.
+- Scanned item and total weights require matching direct full-page readings at two different effective rendering scales. A decimal crop cannot overwrite an already-decimal source weight, and contradictory readings from independently valid complete raw weight ledgers block export even when each ledger reconciles. Integer-printed weights remain supported when independently corroborated. This reduces correlated OCR risk; it does not guarantee perfect OCR. The passive `Numeric OCR evidence` worksheet retains raw values, source file/page, scale and segmentation mode, including ZIP imports. Other numeric fields retain their strict arithmetic validation.
+- Corroborating weight evidence must belong to a complete original raw ledger: item identities, quantities and printed totals reconcile without crop edits. Inconsistent or incomplete raw attempts stay in the passive audit but cannot corroborate or veto an output. Continuation pages are evaluated together within one scan attempt; different attempts are never mixed into a raw ledger. Two conflicting valid ledgers still block, with no majority voting.
 - Local OCR retries invalid pages at bounded alternate rendering scales. Independently validated complete pages are retained unchanged; partial continuation pages remain eligible for retries. Values from separate attempts are never combined to manufacture a passing invoice. Blank or unrecognized scanned pages cannot silently disappear behind a valid page. All original numeric checks remain in force.
 - Bounded OCR spelling of the Carton label is accepted; missing cartons stay blank rather than borrowing shipment identifiers. Unknown classifications no longer claim that declaration codes are ready.
 - Build: `node scripts/build-app.mjs`. Test: `node --test tests/*.test.mjs`. Current integration tests invoke the actual converter and workbook writer for warning-only export, strict numeric blocking, repeated SKU across invoices, combined formulas/audit, and dependency isolation. Historical tests also preserve prior behavior contracts where explicitly imported.
 
-The sections below document earlier releases; their required review and split-download behavior is superseded by R10 above.
+The sections below document earlier releases; their required review and split-download behavior is superseded by R11 above.
 
 ## PDF repair (2026-10-20)
 

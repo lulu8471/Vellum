@@ -111,13 +111,13 @@ app = app.replace('Review details (${a.issues.length})','Processing details (${a
 app=app.replace('e.cartonNumber||e.shipmentNumber||n.shipmentNumber','e.cartonNumber||``');
 // Unknown classifications must not present ready declaration codes.
 app=app.replace('status:n([`HTS`,`Item COO`])?`error`:i?`adjusted`:`pass`,result:i?`Special rules applied`:`Codes ready`','status:n([`HTS`,`Item COO`])?`error`:e.some(row=>row.productDescription===`Unknown (unverified)`)?`warning`:i?`adjusted`:`pass`,result:e.some(row=>row.productDescription===`Unknown (unverified)`)?`Source classification unavailable`:i?`Special rules applied`:`Codes ready`');
-app=app.replaceAll('invoice-zip-v7.js','invoice-zip-v10.js');
-app=app.replaceAll('PDF8-20261020','PDF10-20261020').replaceAll('-v8.js','-v10.js');
-write('assets/index-VELLUM-PDF10-20261020.js', app);
-for(const name of ['classification','downloads'])write(`assets/invoice-${name}-v10.js`,read(`assets/invoice-${name}-v8.js`));
+app=app.replaceAll('invoice-zip-v7.js','invoice-zip-v11.js');
+app=app.replaceAll('PDF8-20261020','PDF11-20261020').replaceAll('-v8.js','-v11.js');
+write('assets/index-VELLUM-PDF11-20261020.js', app);
+for(const name of ['classification','downloads'])write(`assets/invoice-${name}-v11.js`,read(`assets/invoice-${name}-v8.js`));
 
-for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF10-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF10-20261020.js']]) {
-  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF10-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF10-20261020.js'));
+for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF11-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF11-20261020.js']]) {
+  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF11-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF11-20261020.js'));
 }
-write('index.html', read('index.html').replace(/index-VELLUM-PDF\d*-20261020\.js/g,'index-VELLUM-PDF10-20261020.js').replace(/pdf-repair-20261020-r\d+/g,'pdf-repair-20261020-r10'));
+write('index.html', read('index.html').replace(/index-VELLUM-PDF\d*-20261020\.js/g,'index-VELLUM-PDF11-20261020.js').replace(/pdf-repair-20261020-r\d+/g,'pdf-repair-20261020-r11'));
 console.log('Built automatic combined PDF workbook app from preserved SAFE3 baseline.');
