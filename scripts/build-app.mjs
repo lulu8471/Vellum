@@ -36,11 +36,17 @@ app = app.replace('e.extendedCost,0,0,e.extendedCost,e.unitWeightGrams', 'e.exte
 app = app.replace('e.hts,e.invoiceNumber||n.invoiceNumber])]', 'e.hts,e.hawb||e.invoiceNumber||n.invoiceNumber])]');
 app = 'import { buildInvoiceDownloads } from "./invoice-downloads.js";\n' + app;
 app = 'import { classifyInvoiceItem, reviewInvoiceDescriptions, reviewInvoiceProducts } from "./invoice-classification.js";\n' + app;
+// Preserve shipment rows even when an optional carton identifier is absent.
+replaceOnce('.filter(({record:e})=>le(e[`Carton ID`])&&le(e[`Item Name`]))', '.filter(({record:e})=>le(e[`Item Name`])||le(e[`Commercial Invoice`]))');
+replaceOnce('[[`Carton ID`,e[`Carton ID`]],', '[[`Item Name`,e[`Item Name`]],');
+replaceOnce('let b=le(e[`Item Name`]);return{', 'le(e[`Carton ID`])||u.push({id:`${t}-optional-carton`,severity:`warning`,sourceRow:t,field:`Carton ID`,message:`Carton ID is blank in the source. The row is retained with a blank carton; no identifier was inferred.`});let b=le(e[`Item Name`]);return{');
+// Include the unassigned group in mixed-document filenames instead of implying one HAWB.
+replaceOnce('h=m.length?m.join(`_`):', 'h=f.includes(`Unassigned`)&&m.length?`Multiple shipments`:m.length?m.join(`_`):');
 // Version helper imports too: cached first-release modules must not mix with this build.
-app = app.replace('"./invoice-pdf.js"', '"./invoice-pdf-v2.js"').replace('"./invoice-classification.js"', '"./invoice-classification-v2.js"');
-write('assets/index-VELLUM-PDF2-20261020.js', app);
-for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF2-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF2-20261020.js']]) {
-  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF2-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF2-20261020.js'));
+app = app.replace('"./invoice-pdf.js"', '"./invoice-pdf-v3.js"').replace('"./invoice-classification.js"', '"./invoice-classification-v3.js"');
+write('assets/index-VELLUM-PDF3-20261020.js', app);
+for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF3-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF3-20261020.js']]) {
+  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF3-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF3-20261020.js'));
 }
-write('index.html', read('index.html').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF2-20261020.js').replace('index-VELLUM-PDF-20261020.js', 'index-VELLUM-PDF2-20261020.js').replace('pdf-repair-20261020\"', 'pdf-repair-20261020-r2\"'));
+write('index.html', read('index.html').replace('index-VELLUM-PDF2-20261020.js', 'index-VELLUM-PDF3-20261020.js').replace('pdf-repair-20261020-r2', 'pdf-repair-20261020-r3').replace('    <script src="./assets/ocr-compat-final.js"></script>\n', '').replace('index-VELLUM-SAFE3-20260826.js', 'index-VELLUM-PDF3-20261020.js').replace('index-VELLUM-PDF-20261020.js', 'index-VELLUM-PDF3-20261020.js').replace('pdf-repair-20261020\"', 'pdf-repair-20261020-r3\"'));
 console.log('Built PDF-repair app from preserved SAFE3 baseline.');

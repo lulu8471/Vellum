@@ -4,10 +4,10 @@ Browser-local preparation of shipment Excel files from spreadsheets and COMPASS 
 
 ## PDF repair (2026-10-20)
 
-- `assets/invoice-pdf-v2.js` is the maintained PDF parser and local OCR pipeline.
-- `assets/invoice-classification-v2.js` handles conservative category inference and explicit OCR-description review.
+- `assets/invoice-pdf-v3.js` is the maintained PDF parser and local OCR pipeline.
+- `assets/invoice-classification-v3.js` handles conservative category inference and explicit OCR-description review.
 - `scripts/build-app.mjs` deterministically integrates these modules into the existing deployed application. Run `node scripts/build-app.mjs` after changing integration hooks. The repository contains deployed assets, not the original React source project; the verified `index-VELLUM-SAFE3-20260826.js` is preserved as the integration baseline.
-- `index.html` loads `index-VELLUM-PDF2-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
+- `index.html` loads `index-VELLUM-PDF3-20261020.js`. PDF/Tesseract helper imports point to that same module, preventing an old app from mounting a second React root during PDF import. Versioned PDF2 helpers and vendor chunks are isolated; the complete PDF1 dependency path remains unchanged for already-open pages. The old global `String.prototype.match` patch is no longer loaded.
 
 ### Reliability and privacy
 
@@ -32,3 +32,7 @@ Publish only reviewed application assets, scripts and synthetic tests. Do not co
 The matching official PDF.js 6.2.108 image decoders and licenses live in `pdfjs/wasm/`. Supplying `wasmUrl` fixes JBIG2 images that previously rendered blank and were misleadingly reported as blurry. Decoder assets come from the official `pdfjs-dist` npm package. Numeric cell crops are locally re-read when unit weights do not reconcile; decimal points are recognized from image pixels, never inferred by dividing values.
 
 Each invoice/destination in a PDF is validated independently and gets its own named Excel download. Same invoice + destination + SKU rows merge only when unit values and descriptions agree. Zero-price invoice lines are accepted when all quantities, weights and totals reconcile. Decimal-format whole quantities, explicit line freight/insurance and subtotal checks are supported. Actual Carton and AWB fields are preserved when present. Unknown product categories have an explicit dropdown; cancellation creates no output.
+
+### Third repair: CSV row completeness
+
+Shipment rows with a blank Carton ID are retained, with a visible warning and the original blank value. Candidate rows are recognized by SKU or invoice number; missing SKUs block export rather than disappearing. Quoted CSV fields and prefixed report lines use the existing spreadsheet reader. Missing HAWB remains explicitly unassigned. Previously deployed dependency graphs are preserved, and this release uses isolated PDF3 modules. An owner-confirmed category override is limited to its specific SKU; no general BOR rule is inferred.
