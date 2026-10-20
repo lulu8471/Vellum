@@ -107,10 +107,16 @@ app = app.replace('const model=mergeShipmentModel(await _eRaw(e));model.checks='
 app = app.replace('let l=[...s.issues,...r].map(issue=>issue.field===`Item Description`||issue.field===`Product Description`?{...issue,severity:issue.severity===`error`?`warning`:issue.severity}:issue);return', 'let l=withoutDescriptionNotices([...s.issues,...r]);return');
 app = app.replaceAll('All descriptions present','Source descriptions retained');
 app = app.replace('Review details (${a.issues.length})','Processing details (${a.issues.length})');
-write('assets/index-VELLUM-PDF8-20261020.js', app);
-write('assets/invoice-pdf-v8.js',read('assets/invoice-pdf-v7.js').replaceAll('PDF7-20261020','PDF8-20261020').replace("    if (result.data.confidence < 70) throw new Error('This scan is too unclear for reliable local OCR. Please use a sharper scan.');", "    // Page-wide OCR confidence is not a description gate; strict row/totals validation follows."));
-for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF8-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF8-20261020.js']]) {
-  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF8-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF8-20261020.js'));
+// Optional carton identifiers are never replaced by a different identifier type.
+app=app.replace('e.cartonNumber||e.shipmentNumber||n.shipmentNumber','e.cartonNumber||``');
+// Unknown classifications must not present ready declaration codes.
+app=app.replace('status:n([`HTS`,`Item COO`])?`error`:i?`adjusted`:`pass`,result:i?`Special rules applied`:`Codes ready`','status:n([`HTS`,`Item COO`])?`error`:e.some(row=>row.productDescription===`Unknown (unverified)`)?`warning`:i?`adjusted`:`pass`,result:e.some(row=>row.productDescription===`Unknown (unverified)`)?`Source classification unavailable`:i?`Special rules applied`:`Codes ready`');
+app=app.replaceAll('PDF8-20261020','PDF9-20261020').replaceAll('-v8.js','-v9.js');
+write('assets/index-VELLUM-PDF9-20261020.js', app);
+for(const name of ['classification','downloads','inline'])write(`assets/invoice-${name}-v9.js`,read(`assets/invoice-${name}-v8.js`));
+
+for (const [source, target] of [['assets/pdf-AOUXcwrk.js', 'assets/pdf-PDF9-20261020.js'], ['assets/src-DGBeAv_F.js', 'assets/ocr-PDF9-20261020.js']]) {
+  write(target, read(source).replace('./index-BAi-XoUX.js', './index-VELLUM-PDF9-20261020.js').replace('./index-VELLUM-PDF-20261020.js', './index-VELLUM-PDF9-20261020.js'));
 }
-write('index.html', read('index.html').replace(/index-VELLUM-PDF\d*-20261020\.js/g,'index-VELLUM-PDF8-20261020.js').replace(/pdf-repair-20261020-r\d+/g,'pdf-repair-20261020-r8'));
+write('index.html', read('index.html').replace(/index-VELLUM-PDF\d*-20261020\.js/g,'index-VELLUM-PDF9-20261020.js').replace(/pdf-repair-20261020-r\d+/g,'pdf-repair-20261020-r9'));
 console.log('Built automatic combined PDF workbook app from preserved SAFE3 baseline.');

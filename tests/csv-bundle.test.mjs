@@ -4,10 +4,10 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import {appendInvoiceEvidence,withoutDescriptionNotices,applySourceDescriptionPolicy} from '../assets/invoice-inline-v8.js';
+import {appendInvoiceEvidence,withoutDescriptionNotices,applySourceDescriptionPolicy} from '../assets/invoice-inline-v9.js';
 import {mergeShipmentModel,appendMergeSources} from '../assets/shipment-merge-v4.js';
 function bundle() {
- let code=fs.readFileSync(new URL('../assets/index-VELLUM-PDF8-20261020.js',import.meta.url),'utf8');
+ let code=fs.readFileSync(new URL('../assets/index-VELLUM-PDF9-20261020.js',import.meta.url),'utf8');
  code=code.replace(/^(?:import[^\n]+\n)+/,'').replace(/^document.documentElement.dataset.vellumBuild=[^;]+;/,'');
  code=code.replace(/\(function\(\)\{let e=document\.createElement\(`link`\)[\s\S]*?\}\)\(\);var p=/,'var p=');
  const mount=code.lastIndexOf('(0,T.createRoot)');assert.ok(mount>0,'Bundle bootstrap seam changed; review test adapter');
