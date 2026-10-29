@@ -128,9 +128,9 @@ test('zero-weight review cannot release a different row with zero weight',async(
   assert.ok(model.issues.some(issue=>issue.severity==='error'&&issue.field==='Item Weight Grams'&&issue.sourceRow===3));
   await assert.rejects(api.write(model),/Resolve/);
 });
-test('R14 entry and helpers share the isolated R14 graph',()=>{
+test('Historical R14 entry and helpers share the isolated R14 graph',()=>{
   const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
-  assert.match(read('index.html'),/index-VELLUM-SAFARI14-20261029\.js/);
+  assert.ok(read('assets/index-VELLUM-SAFARI14-20261029.js').includes('safari-stream-20261029-r14'));
   const app=read('assets/index-VELLUM-SAFARI14-20261029.js');
   for(const name of ['classification','inline','downloads','pdf','zip'])assert.ok(app.includes(`invoice-${name}-v14.js`));
   assert.ok(app.includes('commercial-excel-v14.js'));

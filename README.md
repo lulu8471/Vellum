@@ -1,3 +1,14 @@
+## R15 — bounded browser-local PDF processing
+
+Build: `bounded-ocr-20261029-r15`. Run `node scripts/build-bounded.mjs` and `node --test tests/*.test.mjs`.
+
+- Whole-run progress is monotonic and names the page, verification pass, current operation and elapsed time. Current-read percentages are explicitly separate from overall progress.
+- Stop and review cancels the actual OCR worker (including initialization), active render and PDF task. A five-minute whole-import safety deadline and per-operation deadlines lead to retained-text review, never an unchecked partial download. This is a fail-safe, not a promised processing time. Browser suspension or a frozen OS can delay timers; keep the tab foregrounded.
+- Timeouts and engine failures are terminal for that run: no more OCR jobs queue on the stopped worker. Cleanup is bounded; late results cannot create a download or overwrite a later run.
+- An unread page cannot be omitted just because the remaining rows reconcile. Recovery keeps the original page count and requires source-based transcription plus exact-text-bound completion confirmation for each unread page. Existing row, total, zero-weight and classification checks remain intact.
+- A ZIP shares one deadline. An incomplete archive exposes retained text only as a reference; it cannot export one failed member as if it were the complete archive. Import the original PDFs separately for correction.
+- R14's Safari text-stream reader fix and R13's Key/optional-picture workflow are retained. No new export-declaration mode, OCR service or private fixture is included.
+
 # Vellum
 
 Browser-local preparation of shipment Excel files from spreadsheets and COMPASS PDF invoices. The existing English UI, workbook template, spreadsheet formulas, grouping and sorting are retained.

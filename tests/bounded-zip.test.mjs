@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {bundle} from './bounded-harness.mjs';
+import {readPdfArchive} from '../assets/invoice-zip-v15.js';
+import {createImportRun} from '../assets/invoice-runtime-v15.js';
+const api=bundle(),sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const file=()=>{const c=api.xlsx.CFB.utils.cfb_new();for(const name of ['a.pdf','b.pdf','c.pdf'])api.xlsx.CFB.utils.cfb_add(c,name,new TextEncoder().encode(name));return new File([api.xlsx.CFB.write(c,{type:'array',fileType:'zip'})],'test.zip')};
+const result=name=>({pages:1,extractionMode:'pdf-text',invoices:[{invoiceNumber:name,shipto:'99',declaredTotals:{quantity:1,value:10,weightGrams:2.5},lines:[{lineNumber:1,sku:'12345678',quantity:1,unitCost:10,extendedCost:10,unitWeightGrams:2.5}]}]});
+test('ZIP uses one shared run across all members with bounded overall progress spans',async()=>{const runs=[],spans=[];const parsed=await readPdfArchive(file(),api.xlsx,async(f,p,o)=>{runs.push(o.run);spans.push([o.progressStart,o.progressSpan]);return result(f.name)});assert.equal(new Set(runs).size,1);assert.equal(parsed.lines.length,3);assert.equal(parsed.declaredTotals.quantity,3);assert.ok(spans[1][0]>spans[0][0]);assert.equal(spans[0][1],80/3)});
+test('ZIP deadline is not reset per member and no remaining member is started',async()=>{let count=0;const run=createImportRun({budgetMs:25});try{await assert.rejects(readPdfArchive(file(),api.xlsx,async(f,p,o)=>{count++;await o.run.step(()=>sleep(18));return result(f.name)},undefined,{run}),e=>e.code==='IMPORT_DEADLINE'&&e.archiveIncomplete);assert.ok(count<3)}finally{run.finish()}});
+test('ZIP error marks retained member text as incomplete archive and blocks any success return',async()=>{let calls=0;await assert.rejects(readPdfArchive(file(),api.xlsx,async f=>{calls++;if(calls===2){const e=Error('Page not fully read');e.sourcePages=['retained member text'];throw e}return result(f.name)}),e=>e.archiveIncomplete&&e.sourcePages[0]==='retained member text'&&/no partial archive/.test(e.message));assert.equal(calls,2)});
