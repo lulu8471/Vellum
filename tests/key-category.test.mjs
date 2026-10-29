@@ -130,7 +130,7 @@ test('zero-weight review cannot release a different row with zero weight',async(
 });
 test('R13 entry and helpers share the isolated R13 graph',()=>{
   const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
-  assert.match(read('index.html'),/index-VELLUM-KEY13-20261029\.js/);
+  // Historical R13 graph remains unchanged; current entry is tested separately.
   const app=read('assets/index-VELLUM-KEY13-20261029.js');
   for(const name of ['classification','inline','downloads','pdf','zip'])assert.ok(app.includes(`invoice-${name}-v13.js`));
   assert.ok(app.includes('commercial-excel-v13.js'));

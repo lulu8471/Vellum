@@ -2,6 +2,12 @@
 
 Browser-local preparation of shipment Excel files from spreadsheets and COMPASS PDF invoices. The existing English UI, workbook template, spreadsheet formulas, grouping and sorting are retained.
 
+## Current release: Safari PDF stream compatibility (R14)
+
+- PDF.js text extraction now drains `ReadableStream.getReader()` instead of relying on stream async iteration, which is unavailable in some shipping Safari versions. Text item order, styles, language and the XFA branch are retained; reader locks are released on success and error.
+- This is an isolated dependency-graph compatibility patch, not a library upgrade or global prototype polyfill. R13 Key rules, scanned invoice review, zero-weight confirmation, local OCR, formulas and numeric checks are unchanged.
+- Build: `node scripts/build-safari.mjs`. Test: `node --test tests/*.test.mjs`. Synthetic tests reproduce the absent-async-iterator failure in the previous exact vendor method, then verify the patched method, cleanup and R14 Key/zero-review exports. Shipping Apple Safari still needs device-side confirmation; a Chromium or bundled-WebKit pass alone is not proof of Safari behavior.
+
 ## Current release: Key classification and source-weight review (R13)
 
 - `KEY` as an explicit item marker stays **Key** in PDF, CSV/XLSX classification, the preview and workbook. A generic Pendant category cannot overwrite this more specific marker. True pendant and necklace descriptions are unchanged. No customer SKU table was added.
