@@ -2,6 +2,15 @@
 
 Browser-local preparation of shipment Excel files from spreadsheets and COMPASS PDF invoices. The existing English UI, workbook template, spreadsheet formulas, grouping and sorting are retained.
 
+## Current release: Key classification and source-weight review (R13)
+
+- `KEY` as an explicit item marker stays **Key** in PDF, CSV/XLSX classification, the preview and workbook. A generic Pendant category cannot overwrite this more specific marker. True pendant and necklace descriptions are unchanged. No customer SKU table was added.
+- Product photographs are optional. Classification uses source descriptions and existing verified evidence; unidentifiable items remain `Unknown (unverified)` rather than guessed from shape. Images, if supplied, remain subject to the unchanged local colour-photo exception rule.
+- Scanned COMPASS invoices retain numeric row, sequence, total and independent raw-ledger checks. Unreliable extraction opens the existing local text correction/recheck flow. Messages identify the affected source row.
+- Source-printed zero gram weights do not export automatically. Each zero row must be verified and explicitly checked in the correction panel. Confirmations are bound to the invoice/line/SKU and exact edited text, reset on edits, and recorded in a `Zero weight review` worksheet. Zero is retained as zero, never replaced with an estimated weight. All other arithmetic and invoice-total checks remain blocking.
+- OCR and correction remain browser-local. No customer documents, pictures, descriptions or SKU mappings were added to this release or its synthetic tests.
+- Build current release: `node scripts/build-key.mjs`. Test: `node --test tests/*.test.mjs`. This isolated build derives from the existing R12 bundle; the historical R11 build script is not the current production build. All earlier asset graphs are retained for already-open tabs.
+
 ## Current behavior: automatic combined export (R11)
 
 - One source PDF produces **one workbook**, with all invoice rows together in the existing Vellum main worksheet. Existing formatting, sorting, formulas, invoice identifiers and totals are preserved. Different invoices are never merged by SKU.

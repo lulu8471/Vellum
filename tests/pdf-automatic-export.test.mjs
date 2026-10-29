@@ -53,9 +53,8 @@ test('same SKU in distinct invoices remains two rows in one workbook',async()=>{
  assert.equal(m.issues.filter(i=>i.severity==='error').length,0);
  const links=await buildInvoiceDownloads(m,api.write);assert.equal(links.length,1);links.forEach(l=>URL.revokeObjectURL(l.href));
 });
-test('R11 entry and dynamic PDF/OCR helpers share isolated R11 app graph',()=>{
+test('historical R11 dynamic PDF/OCR helpers retain isolated R11 app graph',()=>{
  const read=n=>fs.readFileSync(new URL('../'+n,import.meta.url),'utf8');
- assert.ok(read('index.html').includes('index-VELLUM-PDF11-20261020.js'));
  const app=read('assets/index-VELLUM-PDF11-20261020.js');
  assert.ok(!app.includes('./src-DGBeAv_F.js'));
  assert.ok(app.includes('./ocr-PDF11-20261020.js'));
