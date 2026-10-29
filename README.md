@@ -1,3 +1,15 @@
+## R16 — separate Export Excel → 92 entry
+
+Open `export-92.html` explicitly from the mode navigation. The normal R15 invoice/OCR application and its dependency files remain byte-identical; no parser dispatch, Key/50/38 rule, merging rule or workbook writer is replaced.
+
+This independent route accepts only the current uploaded Export Excel (`.xlsx` / `.xls`), selects a visible Invoice table by its source schema, and excludes hidden historical sheets. Ambiguous Invoice tables are rejected. One source becomes one 17-column `工作表1`, with source row order and exact description whitespace preserved, no SKU merging, unknown destination fields blank and payment-method text `92`. Source import references stay on the separate review sheet, not appended to descriptions.
+
+The Invoice country-of-origin value is retained. Packing List is comparison-only: source-supported unique item matching is required, Box No. is not an item key, missing/ambiguous comparison is not a mismatch, and only a confirmed different country cell receives `FFF2CC` fill. The small US/USA equivalence rule does not rewrite the source value. Item weight is copied from the source, not inferred from Packing gross weight or multiplied by quantity; multi-quantity semantics are flagged for source review.
+
+Source totals, formulas, identifiers and comparison coordinates remain traceable in the review sheet. Unsafe required data block download; no macro, external formula, source network request or old-session value is used. The standalone spreadsheet vendor is the exact existing xlsx-js-style 1.2.0 / SheetJS 0.18.5 code, isolated from the application mount and category data; the license is in `licenses/`.
+
+Run `node scripts/build-export92.mjs` then `node --test tests/*.test.mjs`. Public tests are synthetic only; private source workbooks and their expected results must never be committed. Validate real source fixtures privately, inspect native XLSX values/types/fills and verify both website routes after deployment. Output is a template arrangement, not a claim of acceptance by any customs filing system.
+
 ## R15 — bounded browser-local PDF processing
 
 Build: `bounded-ocr-20261029-r15`. Run `node scripts/build-bounded.mjs` and `node --test tests/*.test.mjs`.
