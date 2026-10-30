@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta name="vellum-build" content="pebble-ui-20261030-r17">
+ <meta name="description" content="A local file workspace.">
+ <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+ <title>Pebble</title>
+ <link rel="icon" href="./pebble.svg">
+ <link rel="stylesheet" href="./assets/export92.css?v=r17">
+ <link rel="stylesheet" href="./assets/mode-navigation.css?v=r17">
+ <script type="module" src="./assets/export92-page.js?v=r17"></script>
+</head>
+<body>
+ <nav class="vellum-mode-navigation" aria-label="Workspace"><a href="./">Workspace 1</a><a href="./pebble.html" aria-current="page">Workspace 2</a></nav>
+ <main id="export92-root" class="export92-shell">
+  
+  <section class="export92-card" aria-labelledby="source-heading">
+   <div class="section-heading"><h2 id="source-heading">Pebble</h2><span class="local-pill">Local processing</span></div>
+   <label class="file-picker" for="export92-file"><span>Open</span><span class="file-types">.xlsx or .xls</span><input id="export92-file" type="file" accept=".xlsx,.xls" aria-label="Open" aria-describedby="export92-status"></label>
+   <p id="export92-status" role="status" aria-live="polite">No file selected</p>
+   <div class="actions"><button id="export92-clear" class="secondary" type="button" hidden disabled>Reset</button></div>
+   <p id="export92-error" role="alert" hidden></p>
+  </section>
+  <section id="export92-results" class="export92-card" aria-labelledby="result-heading" hidden>
+   <div class="section-heading"><h2 id="result-heading">Result</h2><a id="export92-download" class="primary download" hidden>Save</a></div>
+   <div id="export92-warnings" class="source-warnings"></div>
+  </section>
+  <footer><span>Files stay on this device.</span><details><summary>Output notes</summary><p>Source text and values are preserved. Review notes are included in the saved file. Import compatibility has not been verified.</p></details></footer>
+ </main>
+</body>
+</html>

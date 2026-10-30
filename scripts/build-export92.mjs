@@ -11,7 +11,4 @@ if(!(a>0&&b>a&&c>b&&d>c))throw Error('Vendor boundaries changed');
 const header='// Copyright (C) 2012-present SheetJS LLC. Apache-2.0; see ../licenses/LICENSE-xlsx-js-style.txt.\n// Standalone packaging extracted from the existing Vellum vendor; algorithms unchanged.\n// Exact xlsx-js-style 1.2.0 / SheetJS 0.18.5 vendor from existing Vellum. No application mount, category data or OCR.\n';
 write('assets/export92-xlsx.js',header+s.slice(a,b)+'var '+s.slice(c,d)+';\nconst XLSX=C(); export default XLSX;\n');
 for(const p of ['assets/export92-xlsx.js','assets/export92-v1.js','assets/export92-ui.js','assets/export92-page.js'])execFileSync(process.execPath,['--check',new URL(p,root).pathname]);
-let html=read('index.html');
-if(!html.includes('mode-navigation.css'))html=html.replace('</head>','  <link rel="stylesheet" href="./assets/mode-navigation.css">\n  </head>');
-if(!html.includes('class="vellum-mode-navigation"'))html=html.replace('<body>','<body>\n    <nav class="vellum-mode-navigation" aria-label="整理模式"><a href="./" aria-current="page">一般發票整理</a><a href="./export-92.html">Export Excel → 92 報單</a></nav>');
-write('index.html',html);console.log('Independent Export92 entry prepared; original R15 app bytes unchanged.');
+console.log('Standalone vendor verified; page UI is maintained independently.');

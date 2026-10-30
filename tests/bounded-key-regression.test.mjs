@@ -130,7 +130,9 @@ test('zero-weight review cannot release a different row with zero weight',async(
 });
 test('R15 entry and helpers share the isolated R15 graph',()=>{
   const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
-  assert.match(read('index.html'),/index-VELLUM-BOUNDED15-20261029\.js/);
+  assert.match(read('index.html'),/index-PEBBLE17-20261030\.js/);
+  const imports=JSON.parse(read('index.html').match(/<script type="importmap">([^<]+)<\/script>/)[1]).imports;
+  assert.equal(imports['./assets/index-VELLUM-BOUNDED15-20261029.js'],'./assets/index-PEBBLE17-20261030.js');
   const app=read('assets/index-VELLUM-BOUNDED15-20261029.js');
   for(const name of ['classification','inline','downloads','pdf','zip'])assert.ok(app.includes(`invoice-${name}-v15.js`));
   assert.ok(app.includes('commercial-excel-v15.js'));

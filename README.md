@@ -1,3 +1,9 @@
+## R17 — Pebble interface (2026-10-30)
+
+Both public workspaces use a neutral English interface: **Workspace 1** retains the general reader and **Workspace 2** retains the isolated source-Excel mode. **Open** selects a file and starts processing; **Save** downloads the result; **Reset** clears it. Long PDF runs retain **Stop**, progress, deadlines and recovery. There is no preview step in Workspace 2. Actionable validation messages remain visible and invalid/incomplete sources still cannot export.
+
+The new entry is `pebble.html`; the old `export-92.html` URL redirects there. This is presentation and input-trigger work only: workbook fields, source values, classification, country highlighting and the 17-column template are unchanged. R15 modules remain byte-identical; the generated home bundle changes only its UI component and build label. An import map resolves legacy PDF/OCR helper imports to that same module, preventing a second application mount. Build with `node scripts/build-pebble.mjs`; run `node --test tests/*.test.mjs`.
+
 ## R16 — separate Export Excel → 92 entry
 
 Open `export-92.html` explicitly from the mode navigation. The normal R15 invoice/OCR application and its dependency files remain byte-identical; no parser dispatch, Key/50/38 rule, merging rule or workbook writer is replaced.
