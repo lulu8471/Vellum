@@ -1,3 +1,9 @@
+## R18 — Restore Vellum; refine Pebble (2026-10-30)
+
+The main page again loads the original R15 application and original stylesheet, restoring the familiar Vellum branding, drag/drop input, Prepare action, full processing progress, Excel output cards and 2026 copyright footer. The R17 stripping stylesheet and derivative application are no longer loaded. Navigation is simply **Vellum** and **Pebble**.
+
+Pebble remains a separate English, source-Excel-only page with automatic Open → Save and no forced preview. Its refreshed layout includes a dropzone, source-file detail, honest reading/writing/completion states, accessible warnings and responsive session steps. The parser, workbook template, descriptions, country cells and all R15 algorithms are unchanged. Multiple dropped files are rejected rather than choosing one silently.
+
 ## R17 — Pebble interface (2026-10-30)
 
 Both public workspaces use a neutral English interface: **Workspace 1** retains the general reader and **Workspace 2** retains the isolated source-Excel mode. **Open** selects a file and starts processing; **Save** downloads the result; **Reset** clears it. Long PDF runs retain **Stop**, progress, deadlines and recovery. There is no preview step in Workspace 2. Actionable validation messages remain visible and invalid/incomplete sources still cannot export.
